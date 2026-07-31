@@ -26,7 +26,7 @@ namespace TaskManagement.Application.Services
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
             if (existingUser != null)
             {
-                return null; // email already exists
+                return null; 
             }
 
             var user = new User
@@ -34,7 +34,7 @@ namespace TaskManagement.Application.Services
                 FullName = dto.FullName,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Role = dto.Role == "Admin" ? "Admin" : "User"
+                Role = "User"
             };
 
             await _userRepository.AddAsync(user);
@@ -57,7 +57,7 @@ namespace TaskManagement.Application.Services
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
-                return null; // invalid credentials
+                return null; 
             }
 
             var token = _jwtService.GenerateToken(user);

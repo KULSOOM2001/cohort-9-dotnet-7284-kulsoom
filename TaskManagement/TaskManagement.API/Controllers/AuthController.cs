@@ -20,30 +20,36 @@ namespace TaskManagement.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
+            if (dto == null)
+                return BadRequest(new { message = "Request body is required" });
+
             var result = await _authService.RegisterAsync(dto);
 
             if (result == null)
             {
-                _logger.LogWarning("Registration failed - email already exists: {Email}", dto.Email);
+                _logger.LogWarning("Registration failed - email already exists");
                 return BadRequest(new { message = "Email already registered" });
             }
 
-            _logger.LogInformation("New user registered: {Email}", dto.Email);
+            _logger.LogInformation("New user registered successfully");
             return Ok(result);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
+            if (dto == null)
+                return BadRequest(new { message = "Request body is required" });
+
             var result = await _authService.LoginAsync(dto);
 
             if (result == null)
             {
-                _logger.LogWarning("Failed login attempt for: {Email}", dto.Email);
+                _logger.LogWarning("Failed login attempt");
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
-            _logger.LogInformation("User logged in: {Email}", dto.Email);
+            _logger.LogInformation("User logged in successfully");
             return Ok(result);
         }
     }
