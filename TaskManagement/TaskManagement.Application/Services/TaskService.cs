@@ -85,6 +85,9 @@ namespace TaskManagement.Application.Services
             if (currentUserRole != "Admin" && task.AssignedToUserId != currentUserId)
                 return false;
 
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new ArgumentException("Task title is required");
+
             task.Title = dto.Title;
             task.Description = dto.Description;
             task.Status = dto.Status;

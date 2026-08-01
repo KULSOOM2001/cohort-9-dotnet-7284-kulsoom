@@ -25,9 +25,9 @@ namespace TaskManagement.API.Controllers
         private int GetCurrentUserId()
         {
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(idClaim))
+            if (string.IsNullOrEmpty(idClaim) || !int.TryParse(idClaim, out var userId))
                 throw new UnauthorizedAccessException("User identity claim is missing");
-            return int.Parse(idClaim);
+            return userId;
         }
 
         private string GetCurrentUserRole()

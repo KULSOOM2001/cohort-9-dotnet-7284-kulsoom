@@ -19,6 +19,8 @@ namespace TaskManagement.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
+
             try
             {
                 await _next(context);
@@ -26,6 +28,12 @@ namespace TaskManagement.API.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unhandled exception occurred");
+
+                if (context.Response.HasStarted)
+                {
+                    throw;
+                }
+
                 await HandleExceptionAsync(context, ex);
             }
         }
@@ -34,21 +42,19 @@ namespace TaskManagement.API.Middleware
         {
             context.Response.ContentType = "application/json";
 
-            var statusCode = exception switch
+            var (statusCode, message) = exception switch
             {
-                UnauthorizedAccessException => HttpStatusCode.Unauthorized,
-                ArgumentException => HttpStatusCode.BadRequest,
-                KeyNotFoundException => HttpStatusCode.NotFound,
-                _ => HttpStatusCode.InternalServerError
+                UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "You are not authorized to perform this action."),
+                ArgumentException => (HttpStatusCode.BadRequest, "The request contains invalid data."),
+                KeyNotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
+                _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred. Please try again later.")
             };
 
             context.Response.StatusCode = (int)statusCode;
 
             var response = new
             {
-                message = statusCode == HttpStatusCode.InternalServerError
-                    ? "An unexpected error occurred. Please try again later."
-                    : exception.Message,
+                message,
                 statusCode = (int)statusCode
             };
 
