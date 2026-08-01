@@ -11,6 +11,8 @@ namespace TaskManagement.Domain.Entities
         private string _fullName = string.Empty;
         private string _email = string.Empty;
         private string _passwordHash = string.Empty;
+        private string _role = "User";
+        private ICollection<TaskItem> _tasks = new List<TaskItem>();
 
         public int Id { get; set; }
 
@@ -47,10 +49,23 @@ namespace TaskManagement.Domain.Entities
             }
         }
 
-        public string Role { get; set; } = "User";
+        public string Role
+        {
+            get => _role;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Role cannot be null or empty", nameof(Role));
+                _role = value;
+            }
+        }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+        public ICollection<TaskItem> Tasks
+        {
+            get => _tasks;
+            set => _tasks = value ?? throw new ArgumentNullException(nameof(Tasks));
+        }
     }
 }
-

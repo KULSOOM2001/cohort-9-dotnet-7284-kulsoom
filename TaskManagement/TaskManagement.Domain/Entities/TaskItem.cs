@@ -45,6 +45,6 @@ namespace TaskManagement.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public int AssignedToUserId { get; set; }
-        public User AssignedToUser { get; set; } = null!;
+        public User? AssignedToUser { get; set; }
     }
 }
