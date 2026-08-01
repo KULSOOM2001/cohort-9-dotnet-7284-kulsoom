@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -10,7 +11,6 @@ using TaskManagement.Application.Services;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Repositories;
 using TaskManagement.Infrastructure.Services;
-using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
