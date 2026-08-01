@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Services;
@@ -6,6 +7,7 @@ using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Repositories;
 using TaskManagement.Infrastructure.Services;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace TaskManagement.Tests.Auth
 {
@@ -14,7 +16,7 @@ namespace TaskManagement.Tests.Auth
         private AppDbContext GetInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString()) // har test ke liye fresh DB
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()) 
                 .Options;
 
             return new AppDbContext(options);
@@ -42,7 +44,7 @@ namespace TaskManagement.Tests.Auth
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
             var jwtService = GetJwtService();
-            var authService = new AuthService(userRepository, jwtService);
+            var authService = new AuthService(userRepository, jwtService, NullLogger<AuthService>.Instance);
 
             var dto = new RegisterDto
             {
@@ -55,7 +57,7 @@ namespace TaskManagement.Tests.Auth
 
             Assert.NotNull(result);
             Assert.Equal("testuser@example.com", result.Email);
-            Assert.Equal("User", result.Role); // hamesha "User" honi chahiye, kabhi "Admin" nahi
+            Assert.Equal("User", result.Role); 
             Assert.False(string.IsNullOrEmpty(result.Token));
         }
 
@@ -65,7 +67,7 @@ namespace TaskManagement.Tests.Auth
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
             var jwtService = GetJwtService();
-            var authService = new AuthService(userRepository, jwtService);
+            var authService = new AuthService(userRepository, jwtService, NullLogger<AuthService>.Instance);
 
             var dto = new RegisterDto
             {
@@ -74,7 +76,7 @@ namespace TaskManagement.Tests.Auth
                 Password = "Test123!"
             };
 
-            await authService.RegisterAsync(dto); // pehli baar register
+            await authService.RegisterAsync(dto); 
 
             var result = await authService.RegisterAsync(dto);
 
@@ -87,7 +89,7 @@ namespace TaskManagement.Tests.Auth
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
             var jwtService = GetJwtService();
-            var authService = new AuthService(userRepository, jwtService);
+            var authService = new AuthService(userRepository, jwtService, NullLogger<AuthService>.Instance);
 
             var dto = new RegisterDto
             {
@@ -107,7 +109,7 @@ namespace TaskManagement.Tests.Auth
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
             var jwtService = GetJwtService();
-            var authService = new AuthService(userRepository, jwtService);
+            var authService = new AuthService(userRepository, jwtService, NullLogger<AuthService>.Instance);
 
             var registerDto = new RegisterDto
             {
@@ -135,7 +137,7 @@ namespace TaskManagement.Tests.Auth
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
             var jwtService = GetJwtService();
-            var authService = new AuthService(userRepository, jwtService);
+            var authService = new AuthService(userRepository, jwtService, NullLogger<AuthService>.Instance);
 
             var registerDto = new RegisterDto
             {
@@ -162,7 +164,7 @@ namespace TaskManagement.Tests.Auth
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
             var jwtService = GetJwtService();
-            var authService = new AuthService(userRepository, jwtService);
+            var authService = new AuthService(userRepository, jwtService, NullLogger<AuthService>.Instance);
 
             var loginDto = new LoginDto
             {

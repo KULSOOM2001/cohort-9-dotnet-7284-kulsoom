@@ -16,6 +16,8 @@ namespace TaskManagement.API.Controllers
 
         public TasksController(ITaskService taskService, ILogger<TasksController> logger)
         {
+            ArgumentNullException.ThrowIfNull(taskService);
+            ArgumentNullException.ThrowIfNull(logger);
             _taskService = taskService;
             _logger = logger;
         }

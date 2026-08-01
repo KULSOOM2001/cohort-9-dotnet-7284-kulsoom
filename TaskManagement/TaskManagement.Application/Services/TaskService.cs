@@ -15,6 +15,7 @@ namespace TaskManagement.Application.Services
 
         public TaskService(ITaskRepository taskRepository)
         {
+            ArgumentNullException.ThrowIfNull(taskRepository);
             _taskRepository = taskRepository;
         }
 

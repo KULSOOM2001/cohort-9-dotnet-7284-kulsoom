@@ -18,6 +18,7 @@ namespace TaskManagement.Infrastructure.Services
 
         public JwtService(IConfiguration config)
         {
+            ArgumentNullException.ThrowIfNull(config);
             _config = config;
         }
 

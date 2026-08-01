@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
@@ -13,11 +10,17 @@ namespace TaskManagement.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly IJwtService _jwtService;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(IUserRepository userRepository, IJwtService jwtService)
+        public AuthService(IUserRepository userRepository, IJwtService jwtService, ILogger<AuthService> logger)
         {
+            ArgumentNullException.ThrowIfNull(userRepository);
+            ArgumentNullException.ThrowIfNull(jwtService);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _userRepository = userRepository;
             _jwtService = jwtService;
+            _logger = logger;
         }
 
         public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
@@ -49,8 +52,9 @@ namespace TaskManagement.Application.Services
                 await _userRepository.AddAsync(user);
                 await _userRepository.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to persist new user during registration");
                 return null;
             }
 
