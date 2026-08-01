@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
@@ -23,10 +22,18 @@ namespace TaskManagement.Application.Services
 
         public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
         {
+            if (dto == null
+                || string.IsNullOrWhiteSpace(dto.Email)
+                || string.IsNullOrWhiteSpace(dto.Password)
+                || string.IsNullOrWhiteSpace(dto.FullName))
+            {
+                return null;
+            }
+
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
             if (existingUser != null)
             {
-                return null; 
+                return null;
             }
 
             var user = new User
@@ -37,8 +44,15 @@ namespace TaskManagement.Application.Services
                 Role = "User"
             };
 
-            await _userRepository.AddAsync(user);
-            await _userRepository.SaveChangesAsync();
+            try
+            {
+                await _userRepository.AddAsync(user);
+                await _userRepository.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
 
             var token = _jwtService.GenerateToken(user);
 
@@ -53,11 +67,18 @@ namespace TaskManagement.Application.Services
 
         public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
+            if (dto == null
+                || string.IsNullOrWhiteSpace(dto.Email)
+                || string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return null;
+            }
+
             var user = await _userRepository.GetByEmailAsync(dto.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
-                return null; 
+                return null;
             }
 
             var token = _jwtService.GenerateToken(user);

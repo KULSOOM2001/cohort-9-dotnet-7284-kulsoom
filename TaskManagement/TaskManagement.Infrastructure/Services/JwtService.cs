@@ -24,6 +24,8 @@ namespace TaskManagement.Infrastructure.Services
 
         public string GenerateToken(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),

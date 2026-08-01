@@ -11,7 +11,7 @@ namespace TaskManagement.Application.Interfaces
     {
         Task<List<TaskResponseDto>> GetTasksAsync(int currentUserId, string currentUserRole);
         Task<TaskResponseDto?> GetTaskByIdAsync(int id, int currentUserId, string currentUserRole);
-        Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto);
+        Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, int currentUserId, string currentUserRole);
         Task<bool> UpdateTaskAsync(int id, UpdateTaskDto dto, int currentUserId, string currentUserRole);
         Task<bool> DeleteTaskAsync(int id, string currentUserRole);
     }

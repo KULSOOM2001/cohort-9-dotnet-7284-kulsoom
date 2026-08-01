@@ -20,11 +20,19 @@ namespace TaskManagement.API.Controllers
             _logger = logger;
         }
 
-        private int GetCurrentUserId() =>
-            int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        private int GetCurrentUserId()
+        {
+            var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(idClaim))
+                throw new UnauthorizedAccessException("User identity claim is missing");
+            return int.Parse(idClaim);
+        }
 
-        private string GetCurrentUserRole() =>
-            User.FindFirstValue(ClaimTypes.Role);
+        private string GetCurrentUserRole()
+        {
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            return role ?? "User";
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetTasks()
@@ -50,7 +58,7 @@ namespace TaskManagement.API.Controllers
             if (dto == null)
                 return BadRequest(new { message = "Request body is required" });
 
-            var task = await _taskService.CreateTaskAsync(dto);
+            var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
             _logger.LogInformation("Task created with id {TaskId}", task.Id);
 
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);

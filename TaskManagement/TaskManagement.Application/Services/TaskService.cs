@@ -20,16 +20,9 @@ namespace TaskManagement.Application.Services
 
         public async Task<List<TaskResponseDto>> GetTasksAsync(int currentUserId, string currentUserRole)
         {
-            List<TaskItem> tasks;
-
-            if (currentUserRole == "Admin")
-            {
-                tasks = await _taskRepository.GetAllAsync();
-            }
-            else
-            {
-                tasks = await _taskRepository.GetByUserIdAsync(currentUserId);
-            }
+            List<TaskItem> tasks = currentUserRole == "Admin"
+                ? await _taskRepository.GetAllAsync()
+                : await _taskRepository.GetByUserIdAsync(currentUserId);
 
             return tasks.Select(MapToDto).ToList();
         }
@@ -42,13 +35,21 @@ namespace TaskManagement.Application.Services
                 return null;
 
             if (currentUserRole != "Admin" && task.AssignedToUserId != currentUserId)
-                return null; // not authorized to view this task
+                return null;
 
             return MapToDto(task);
         }
 
-        public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto)
+        public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, int currentUserId, string currentUserRole)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new ArgumentException("Task title is required");
+
+            var assignedToId = currentUserRole == "Admin" ? dto.AssignedToUserId : currentUserId;
+
             var task = new TaskItem
             {
                 Title = dto.Title,
@@ -56,7 +57,7 @@ namespace TaskManagement.Application.Services
                 Priority = dto.Priority,
                 Category = dto.Category,
                 DueDate = dto.DueDate,
-                AssignedToUserId = dto.AssignedToUserId,
+                AssignedToUserId = assignedToId,
                 Status = TaskStatusEnum.Pending
             };
 
@@ -64,11 +65,17 @@ namespace TaskManagement.Application.Services
             await _taskRepository.SaveChangesAsync();
 
             var createdTask = await _taskRepository.GetByIdAsync(task.Id);
-            return MapToDto(createdTask!);
+            if (createdTask == null)
+                throw new InvalidOperationException("Task was created but could not be retrieved");
+
+            return MapToDto(createdTask);
         }
 
         public async Task<bool> UpdateTaskAsync(int id, UpdateTaskDto dto, int currentUserId, string currentUserRole)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
             var task = await _taskRepository.GetByIdAsync(id);
 
             if (task == null)
@@ -83,7 +90,10 @@ namespace TaskManagement.Application.Services
             task.Priority = dto.Priority;
             task.Category = dto.Category;
             task.DueDate = dto.DueDate;
-            task.AssignedToUserId = dto.AssignedToUserId;
+
+            // Only Admin can reassign a task to someone else
+            if (currentUserRole == "Admin")
+                task.AssignedToUserId = dto.AssignedToUserId;
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
@@ -94,7 +104,7 @@ namespace TaskManagement.Application.Services
         public async Task<bool> DeleteTaskAsync(int id, string currentUserRole)
         {
             if (currentUserRole != "Admin")
-                return false; // sirf Admin delete kar sakta hai
+                return false;
 
             var task = await _taskRepository.GetByIdAsync(id);
 
