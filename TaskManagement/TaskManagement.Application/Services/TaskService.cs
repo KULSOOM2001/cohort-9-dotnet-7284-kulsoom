@@ -12,11 +12,14 @@ namespace TaskManagement.Application.Services
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _taskRepository;
+        private readonly IUserRepository _userRepository;
 
-        public TaskService(ITaskRepository taskRepository)
+        public TaskService(ITaskRepository taskRepository, IUserRepository userRepository)
         {
             ArgumentNullException.ThrowIfNull(taskRepository);
+            ArgumentNullException.ThrowIfNull(userRepository);
             _taskRepository = taskRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<List<TaskResponseDto>> GetTasksAsync(int currentUserId, string currentUserRole)
@@ -49,7 +52,14 @@ namespace TaskManagement.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Title))
                 throw new ArgumentException("Task title is required");
 
+            if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
+                throw new ArgumentException("Invalid priority value");
+
             var assignedToId = currentUserRole == "Admin" ? dto.AssignedToUserId : currentUserId;
+
+            var assignedUser = await _userRepository.GetByIdAsync(assignedToId);
+            if (assignedUser == null)
+                throw new ArgumentException("Assigned user does not exist");
 
             var task = new TaskItem
             {
@@ -88,6 +98,12 @@ namespace TaskManagement.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Title))
                 throw new ArgumentException("Task title is required");
 
+            if (!Enum.IsDefined(typeof(TaskStatusEnum), dto.Status))
+                throw new ArgumentException("Invalid status value");
+
+            if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
+                throw new ArgumentException("Invalid priority value");
+
             task.Title = dto.Title;
             task.Description = dto.Description;
             task.Status = dto.Status;
@@ -95,9 +111,14 @@ namespace TaskManagement.Application.Services
             task.Category = dto.Category;
             task.DueDate = dto.DueDate;
 
-            // Only Admin can reassign a task to someone else
             if (currentUserRole == "Admin")
+            {
+                var assignedUser = await _userRepository.GetByIdAsync(dto.AssignedToUserId);
+                if (assignedUser == null)
+                    throw new ArgumentException("Assigned user does not exist");
+
                 task.AssignedToUserId = dto.AssignedToUserId;
+            }
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();

@@ -21,16 +21,16 @@ namespace TaskManagement.Application.Services
 
         public async Task<DashboardDto> GetDashboardAsync(int currentUserId, string currentUserRole)
         {
-            var tasks = currentUserRole == "Admin"
-                ? await _taskRepository.GetAllAsync()
-                : await _taskRepository.GetByUserIdAsync(currentUserId);
+            int? userId = currentUserRole == "Admin" ? null : currentUserId;
+
+            var counts = await _taskRepository.GetStatusCountsAsync(userId);
 
             return new DashboardDto
             {
-                PendingCount = tasks.Count(t => t.Status == TaskStatusEnum.Pending),
-                InProgressCount = tasks.Count(t => t.Status == TaskStatusEnum.InProgress),
-                CompletedCount = tasks.Count(t => t.Status == TaskStatusEnum.Completed),
-                TotalCount = tasks.Count
+                PendingCount = counts.GetValueOrDefault(TaskStatusEnum.Pending),
+                InProgressCount = counts.GetValueOrDefault(TaskStatusEnum.InProgress),
+                CompletedCount = counts.GetValueOrDefault(TaskStatusEnum.Completed),
+                TotalCount = counts.Values.Sum()
             };
         }
     }

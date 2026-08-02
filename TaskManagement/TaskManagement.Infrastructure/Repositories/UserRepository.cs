@@ -22,6 +22,7 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task<User?> GetByEmailAsync(string email)
         {
+            ArgumentNullException.ThrowIfNull(email);
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
@@ -32,6 +33,7 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task AddAsync(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
             await _context.Users.AddAsync(user);
         }
 

@@ -13,6 +13,9 @@ namespace TaskManagement.API.Controllers
 
         public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
+            ArgumentNullException.ThrowIfNull(authService);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _authService = authService;
             _logger = logger;
         }

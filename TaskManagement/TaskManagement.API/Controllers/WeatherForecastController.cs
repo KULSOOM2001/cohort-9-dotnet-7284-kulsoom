@@ -15,6 +15,7 @@ namespace TaskManagement.API.Controllers
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
             _logger = logger;
         }
 

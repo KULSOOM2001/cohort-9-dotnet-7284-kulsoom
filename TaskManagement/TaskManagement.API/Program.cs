@@ -70,9 +70,9 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrWhiteSpace(jwtKey))
+if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
 {
-    throw new InvalidOperationException("JWT Key is not configured. Please set 'Jwt:Key' in User Secrets or environment variables.");
+    throw new InvalidOperationException("JWT Key is not configured or is too short. It must be at least 32 characters (256 bits) for HMAC-SHA256.");
 }
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];

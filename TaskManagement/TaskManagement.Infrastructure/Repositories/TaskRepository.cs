@@ -42,18 +42,34 @@ namespace TaskManagement.Infrastructure.Repositories
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
+        public async Task<Dictionary<TaskStatusEnum, int>> GetStatusCountsAsync(int? userId)
+        {
+            var query = _context.Tasks.AsQueryable();
+
+            if (userId.HasValue)
+                query = query.Where(t => t.AssignedToUserId == userId.Value);
+
+            return await query
+                .GroupBy(t => t.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Status, x => x.Count);
+        }
+
         public async Task AddAsync(TaskItem task)
         {
+            ArgumentNullException.ThrowIfNull(task);
             await _context.Tasks.AddAsync(task);
         }
 
         public void Update(TaskItem task)
         {
+            ArgumentNullException.ThrowIfNull(task);
             _context.Tasks.Update(task);
         }
 
         public void Delete(TaskItem task)
         {
+            ArgumentNullException.ThrowIfNull(task);
             _context.Tasks.Remove(task);
         }
 

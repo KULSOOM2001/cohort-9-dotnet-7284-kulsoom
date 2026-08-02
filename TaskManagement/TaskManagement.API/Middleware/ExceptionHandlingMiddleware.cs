@@ -44,6 +44,7 @@ namespace TaskManagement.API.Middleware
 
             var (statusCode, message) = exception switch
             {
+                ArgumentNullException => (HttpStatusCode.InternalServerError, "An unexpected error occurred. Please try again later."),
                 UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "You are not authorized to perform this action."),
                 ArgumentException => (HttpStatusCode.BadRequest, "The request contains invalid data."),
                 KeyNotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
