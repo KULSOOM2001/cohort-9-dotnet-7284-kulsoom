@@ -11,6 +11,7 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
+  /* stylelint-disable value-keyword-case -- font family names and text-rendering values are case-sensitive and must not be lowercased */
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -22,6 +23,7 @@
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  /* stylelint-enable value-keyword-case */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 

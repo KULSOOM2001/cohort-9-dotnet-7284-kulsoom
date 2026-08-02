@@ -15,7 +15,6 @@ namespace TaskManagement.API.Controllers
         {
             ArgumentNullException.ThrowIfNull(authService);
             ArgumentNullException.ThrowIfNull(logger);
-
             _authService = authService;
             _logger = logger;
         }
@@ -30,8 +29,8 @@ namespace TaskManagement.API.Controllers
 
             if (result == null)
             {
-                _logger.LogWarning("Registration failed - email already exists");
-                return BadRequest(new { message = "Email already registered" });
+                _logger.LogWarning("Registration failed");
+                return BadRequest(new { message = "Registration failed. Please check your details and try again." });
             }
 
             _logger.LogInformation("New user registered successfully");
