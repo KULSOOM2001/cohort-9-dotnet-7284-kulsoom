@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TaskManagement.Application.DTOs;
+﻿using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 
@@ -12,10 +7,14 @@ namespace TaskManagement.Application.Services
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _taskRepository;
+        private readonly IUserRepository _userRepository;
 
-        public TaskService(ITaskRepository taskRepository)
+        public TaskService(ITaskRepository taskRepository, IUserRepository userRepository)
         {
+            ArgumentNullException.ThrowIfNull(taskRepository);
+            ArgumentNullException.ThrowIfNull(userRepository);
             _taskRepository = taskRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<List<TaskResponseDto>> GetTasksAsync(int currentUserId, string currentUserRole)
@@ -42,13 +41,19 @@ namespace TaskManagement.Application.Services
 
         public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, int currentUserId, string currentUserRole)
         {
-            if (dto == null)
-                throw new ArgumentNullException(nameof(dto));
+            ArgumentNullException.ThrowIfNull(dto);
 
             if (string.IsNullOrWhiteSpace(dto.Title))
                 throw new ArgumentException("Task title is required");
 
+            if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
+                throw new ArgumentException("Invalid task priority");
+
             var assignedToId = currentUserRole == "Admin" ? dto.AssignedToUserId : currentUserId;
+
+            var assignedUser = await _userRepository.GetByIdAsync(assignedToId);
+            if (assignedUser == null)
+                throw new ArgumentException($"Assigned user with id {assignedToId} does not exist");
 
             var task = new TaskItem
             {
@@ -58,6 +63,7 @@ namespace TaskManagement.Application.Services
                 Category = dto.Category,
                 DueDate = dto.DueDate,
                 AssignedToUserId = assignedToId,
+                AssignedToUser = assignedUser,
                 Status = TaskStatusEnum.Pending
             };
 
@@ -73,8 +79,16 @@ namespace TaskManagement.Application.Services
 
         public async Task<bool> UpdateTaskAsync(int id, UpdateTaskDto dto, int currentUserId, string currentUserRole)
         {
-            if (dto == null)
-                throw new ArgumentNullException(nameof(dto));
+            ArgumentNullException.ThrowIfNull(dto);
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new ArgumentException("Task title is required");
+
+            if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
+                throw new ArgumentException("Invalid task priority");
+
+            if (!Enum.IsDefined(typeof(TaskStatusEnum), dto.Status))
+                throw new ArgumentException("Invalid task status");
 
             var task = await _taskRepository.GetByIdAsync(id);
 
@@ -92,8 +106,15 @@ namespace TaskManagement.Application.Services
             task.DueDate = dto.DueDate;
 
             // Only Admin can reassign a task to someone else
-            if (currentUserRole == "Admin")
+            if (currentUserRole == "Admin" && dto.AssignedToUserId != task.AssignedToUserId)
+            {
+                var assignedUser = await _userRepository.GetByIdAsync(dto.AssignedToUserId);
+                if (assignedUser == null)
+                    throw new ArgumentException($"Assigned user with id {dto.AssignedToUserId} does not exist");
+
                 task.AssignedToUserId = dto.AssignedToUserId;
+                task.AssignedToUser = assignedUser;
+            }
 
             _taskRepository.Update(task);
             await _taskRepository.SaveChangesAsync();
@@ -101,14 +122,14 @@ namespace TaskManagement.Application.Services
             return true;
         }
 
-        public async Task<bool> DeleteTaskAsync(int id, string currentUserRole)
+        public async Task<bool> DeleteTaskAsync(int id, int currentUserId, string currentUserRole)
         {
-            if (currentUserRole != "Admin")
-                return false;
-
             var task = await _taskRepository.GetByIdAsync(id);
 
             if (task == null)
+                return false;
+
+            if (currentUserRole != "Admin" && task.AssignedToUserId != currentUserId)
                 return false;
 
             _taskRepository.Delete(task);

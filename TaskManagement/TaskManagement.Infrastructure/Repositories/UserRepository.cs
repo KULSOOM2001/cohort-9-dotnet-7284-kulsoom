@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using TaskManagement.Application.Exceptions;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
@@ -12,15 +9,20 @@ namespace TaskManagement.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
+        private const int UniqueConstraintViolation = 2627;
+        private const int UniqueIndexViolation = 2601;
+
         private readonly AppDbContext _context;
 
         public UserRepository(AppDbContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
             _context = context;
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(email);
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
@@ -31,12 +33,27 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task AddAsync(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
             await _context.Users.AddAsync(user);
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateEmailError(ex))
+            {
+                throw new DuplicateEmailException("A user with this email already exists.", ex);
+            }
+        }
+
+        private static bool IsDuplicateEmailError(DbUpdateException ex)
+        {
+            return ex.InnerException is SqlException sqlEx
+                && (sqlEx.Number == UniqueConstraintViolation || sqlEx.Number == UniqueIndexViolation)
+                && sqlEx.Message.Contains("IX_Users_Email", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

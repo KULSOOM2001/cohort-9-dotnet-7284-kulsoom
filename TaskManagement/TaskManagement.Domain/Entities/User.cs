@@ -1,18 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TaskManagement.Domain.Entities
+﻿namespace TaskManagement.Domain.Entities
 {
     public class User
     {
+        private string _fullName = string.Empty;
+        private string _email = string.Empty;
+        private string _passwordHash = string.Empty;
+        private string _role = "User";
+
         public int Id { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
-        public string PasswordHash { get; set; }
-        public string Role { get; set; } = "User"; 
+
+        public required string FullName
+        {
+            get => _fullName;
+            set => _fullName = string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException("FullName cannot be null or empty.", nameof(value))
+                : value;
+        }
+
+        public required string Email
+        {
+            get => _email;
+            set => _email = string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException("Email cannot be null or empty.", nameof(value))
+                : value;
+        }
+
+        public required string PasswordHash
+        {
+            get => _passwordHash;
+            set => _passwordHash = string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException("PasswordHash cannot be null or empty.", nameof(value))
+                : value;
+        }
+
+        public string Role
+        {
+            get => _role;
+            set => _role = string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException("Role cannot be null or empty.", nameof(value))
+                : value;
+        }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }

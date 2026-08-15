@@ -13,6 +13,8 @@ namespace TaskManagement.API.Controllers
 
         public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
+            ArgumentNullException.ThrowIfNull(authService);
+            ArgumentNullException.ThrowIfNull(logger);
             _authService = authService;
             _logger = logger;
         }
@@ -23,12 +25,19 @@ namespace TaskManagement.API.Controllers
             if (dto == null)
                 return BadRequest(new { message = "Request body is required" });
 
+            if (string.IsNullOrWhiteSpace(dto.FullName) ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return BadRequest(new { message = "FullName, Email, and Password are required" });
+            }
+
             var result = await _authService.RegisterAsync(dto);
 
             if (result == null)
             {
                 _logger.LogWarning("Registration failed - email already exists");
-                return BadRequest(new { message = "Email already registered" });
+                return Conflict(new { message = "Email already registered" });
             }
 
             _logger.LogInformation("New user registered successfully");

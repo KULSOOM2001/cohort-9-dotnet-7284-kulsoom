@@ -18,6 +18,7 @@ namespace TaskManagement.Infrastructure.Services
 
         public JwtService(IConfiguration config)
         {
+            ArgumentNullException.ThrowIfNull(config);
             _config = config;
         }
 
@@ -29,8 +30,8 @@ namespace TaskManagement.Infrastructure.Services
             var issuer = _config["Jwt:Issuer"];
             var audience = _config["Jwt:Audience"];
 
-            if (string.IsNullOrWhiteSpace(jwtKey))
-                throw new InvalidOperationException("JWT Key is not configured");
+            if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
+                throw new InvalidOperationException("JWT Key is not configured or too short (min 32 bytes required)");
             if (string.IsNullOrWhiteSpace(issuer))
                 throw new InvalidOperationException("JWT Issuer is not configured");
             if (string.IsNullOrWhiteSpace(audience))

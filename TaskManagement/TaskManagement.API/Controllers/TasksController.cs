@@ -16,6 +16,8 @@ namespace TaskManagement.API.Controllers
 
         public TasksController(ITaskService taskService, ILogger<TasksController> logger)
         {
+            ArgumentNullException.ThrowIfNull(taskService);
+            ArgumentNullException.ThrowIfNull(logger);
             _taskService = taskService;
             _logger = logger;
         }
@@ -45,10 +47,8 @@ namespace TaskManagement.API.Controllers
         public async Task<IActionResult> GetTask(int id)
         {
             var task = await _taskService.GetTaskByIdAsync(id, GetCurrentUserId(), GetCurrentUserRole());
-
             if (task == null)
                 return NotFound(new { message = "Task not found or access denied" });
-
             return Ok(task);
         }
 
@@ -60,7 +60,6 @@ namespace TaskManagement.API.Controllers
 
             var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
             _logger.LogInformation("Task created with id {TaskId}", task.Id);
-
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
         }
 
@@ -71,7 +70,6 @@ namespace TaskManagement.API.Controllers
                 return BadRequest(new { message = "Request body is required" });
 
             var success = await _taskService.UpdateTaskAsync(id, dto, GetCurrentUserId(), GetCurrentUserRole());
-
             if (!success)
                 return NotFound(new { message = "Task not found or access denied" });
 
@@ -82,8 +80,7 @@ namespace TaskManagement.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var success = await _taskService.DeleteTaskAsync(id, GetCurrentUserRole());
-
+            var success = await _taskService.DeleteTaskAsync(id, GetCurrentUserId(), GetCurrentUserRole());
             if (!success)
                 return NotFound(new { message = "Task not found or access denied" });
 
