@@ -6,6 +6,7 @@
         private string _email = string.Empty;
         private string _passwordHash = string.Empty;
         private string _role = "User";
+        private ICollection<TaskItem> _tasks = new List<TaskItem>();
 
         public int Id { get; set; }
 
@@ -42,6 +43,11 @@
         }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+
+        public ICollection<TaskItem> Tasks
+        {
+            get => _tasks;
+            set => _tasks = value ?? throw new ArgumentNullException(nameof(value));
+        }
     }
 }
