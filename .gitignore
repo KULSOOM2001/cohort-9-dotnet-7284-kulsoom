@@ -2,3 +2,6 @@ bin/
 obj/ 
 .vs/ 
 *.user 
+taskmanagement-client/node_modules/
+taskmanagement-client/dist/
+TaskManagement/TaskManagement.API/Logs/
