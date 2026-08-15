@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
+
 
 namespace TaskManagement.API.Controllers
 {
@@ -20,6 +22,7 @@ namespace TaskManagement.API.Controllers
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             if (dto == null)
@@ -38,6 +41,7 @@ namespace TaskManagement.API.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
             if (dto == null)

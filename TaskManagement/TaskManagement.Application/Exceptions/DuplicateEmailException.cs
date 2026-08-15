@@ -5,6 +5,8 @@
         public DuplicateEmailException(string message, Exception innerException)
             : base(message, innerException)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(message);
+            ArgumentNullException.ThrowIfNull(innerException);
         }
     }
 }
