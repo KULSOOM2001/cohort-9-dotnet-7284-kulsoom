@@ -18,11 +18,14 @@ namespace TaskManagement.Infrastructure.Services
 
         public JwtService(IConfiguration config)
         {
+            ArgumentNullException.ThrowIfNull(config);
             _config = config;
         }
 
         public string GenerateToken(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
