@@ -44,16 +44,19 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task AddAsync(TaskItem task)
         {
+            ArgumentNullException.ThrowIfNull(task);
             await _context.Tasks.AddAsync(task);
         }
 
         public void Update(TaskItem task)
         {
+            ArgumentNullException.ThrowIfNull(task);
             _context.Tasks.Update(task);
         }
 
         public void Delete(TaskItem task)
         {
+            ArgumentNullException.ThrowIfNull(task);
             _context.Tasks.Remove(task);
         }
 

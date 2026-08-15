@@ -27,7 +27,6 @@ namespace TaskManagement.Application.Services
         public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
         {
             ArgumentNullException.ThrowIfNull(dto);
-            ValidateRegisterDto(dto);
 
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
             if (existingUser != null)
@@ -73,7 +72,6 @@ namespace TaskManagement.Application.Services
         public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
             ArgumentNullException.ThrowIfNull(dto);
-            ValidateLoginDto(dto);
 
             var user = await _userRepository.GetByEmailAsync(dto.Email);
 
@@ -107,24 +105,6 @@ namespace TaskManagement.Application.Services
                 Email = user.Email,
                 Role = user.Role
             };
-        }
-
-        private static void ValidateRegisterDto(RegisterDto dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.FullName))
-                throw new ArgumentException("FullName is required.", nameof(dto));
-            if (string.IsNullOrWhiteSpace(dto.Email))
-                throw new ArgumentException("Email is required.", nameof(dto));
-            if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 6)
-                throw new ArgumentException("Password must be at least 6 characters.", nameof(dto));
-        }
-
-        private static void ValidateLoginDto(LoginDto dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.Email))
-                throw new ArgumentException("Email is required.", nameof(dto));
-            if (string.IsNullOrWhiteSpace(dto.Password))
-                throw new ArgumentException("Password is required.", nameof(dto));
         }
     }
 }

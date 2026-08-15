@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 
@@ -20,17 +21,11 @@ namespace TaskManagement.API.Controllers
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             if (dto == null)
                 return BadRequest(new { message = "Request body is required" });
-
-            if (string.IsNullOrWhiteSpace(dto.FullName) ||
-                string.IsNullOrWhiteSpace(dto.Email) ||
-                string.IsNullOrWhiteSpace(dto.Password))
-            {
-                return BadRequest(new { message = "FullName, Email, and Password are required" });
-            }
 
             var result = await _authService.RegisterAsync(dto);
 
@@ -45,6 +40,7 @@ namespace TaskManagement.API.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
             if (dto == null)
