@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TaskManagement.Application.DTOs;
+﻿using TaskManagement.Application.DTOs;
+using TaskManagement.Application.Exceptions;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 
@@ -42,13 +42,13 @@ namespace TaskManagement.Application.Services
             {
                 await _userRepository.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (_userRepository.IsDuplicateEmailError(ex))
+            catch (DuplicateEmailException)
             {
                 // Handles the race condition where two requests register the
                 // same email concurrently and both pass the initial check above.
-                // Only the IX_Users_Email unique-constraint violation is treated
-                // as "already registered" — all other DB failures (timeouts,
-                // connectivity issues, etc.) propagate normally.
+                // UserRepository translates the SQL Server IX_Users_Email
+                // constraint violation into this Application-level exception;
+                // all other DB failures propagate normally.
                 return null;
             }
 

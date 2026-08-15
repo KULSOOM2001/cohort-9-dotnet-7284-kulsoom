@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using TaskManagement.Application.Exceptions;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
@@ -21,6 +22,7 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task<User?> GetByEmailAsync(string email)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(email);
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
@@ -31,15 +33,23 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task AddAsync(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
             await _context.Users.AddAsync(user);
         }
 
         public async Task SaveChangesAsync()
         {
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateEmailError(ex))
+            {
+                throw new DuplicateEmailException("A user with this email already exists.", ex);
+            }
         }
 
-        public bool IsDuplicateEmailError(DbUpdateException ex)
+        private static bool IsDuplicateEmailError(DbUpdateException ex)
         {
             return ex.InnerException is SqlException sqlEx
                 && (sqlEx.Number == UniqueConstraintViolation || sqlEx.Number == UniqueIndexViolation)
