@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using TaskManagement.Domain.Entities;
 
 namespace TaskManagement.Application.Interfaces
@@ -13,5 +9,6 @@ namespace TaskManagement.Application.Interfaces
         Task<User?> GetByIdAsync(int id);
         Task AddAsync(User user);
         Task SaveChangesAsync();
+        bool IsDuplicateEmailError(DbUpdateException ex);
     }
 }

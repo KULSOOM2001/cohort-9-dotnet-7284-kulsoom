@@ -42,11 +42,13 @@ namespace TaskManagement.Application.Services
             {
                 await _userRepository.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex) when (_userRepository.IsDuplicateEmailError(ex))
             {
                 // Handles the race condition where two requests register the
                 // same email concurrently and both pass the initial check above.
-                // The unique index on Users.Email rejects the second insert.
+                // Only the IX_Users_Email unique-constraint violation is treated
+                // as "already registered" — all other DB failures (timeouts,
+                // connectivity issues, etc.) propagate normally.
                 return null;
             }
 

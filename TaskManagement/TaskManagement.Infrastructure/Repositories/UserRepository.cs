@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
@@ -12,6 +8,9 @@ namespace TaskManagement.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
+        private const int UniqueConstraintViolation = 2627;
+        private const int UniqueIndexViolation = 2601;
+
         private readonly AppDbContext _context;
 
         public UserRepository(AppDbContext context)
@@ -38,6 +37,13 @@ namespace TaskManagement.Infrastructure.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public bool IsDuplicateEmailError(DbUpdateException ex)
+        {
+            return ex.InnerException is SqlException sqlEx
+                && (sqlEx.Number == UniqueConstraintViolation || sqlEx.Number == UniqueIndexViolation)
+                && sqlEx.Message.Contains("IX_Users_Email", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
