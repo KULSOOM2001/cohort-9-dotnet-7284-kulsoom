@@ -23,7 +23,7 @@ namespace TaskManagement.Domain.Entities
     public class TaskItem
     {
         public int Id { get; set; }
-        public string Title { get; set; }
+        public required string Title { get; set; }
         public string? Description { get; set; }
         public TaskStatusEnum Status { get; set; } = TaskStatusEnum.Pending;
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
@@ -31,6 +31,6 @@ namespace TaskManagement.Domain.Entities
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int AssignedToUserId { get; set; }
-        public User AssignedToUser { get; set; }
+        public required User AssignedToUser { get; set; }
     }
 }

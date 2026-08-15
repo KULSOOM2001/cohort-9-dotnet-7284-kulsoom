@@ -16,6 +16,7 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public UserRepository(AppDbContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
             _context = context;
         }
 
