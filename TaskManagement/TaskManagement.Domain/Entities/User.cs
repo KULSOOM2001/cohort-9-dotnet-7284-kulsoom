@@ -5,6 +5,7 @@
         private string _fullName = string.Empty;
         private string _email = string.Empty;
         private string _passwordHash = string.Empty;
+        private string _role = "User";
 
         public int Id { get; set; }
 
@@ -32,7 +33,14 @@
                 : value;
         }
 
-        public string Role { get; set; } = "User";
+        public string Role
+        {
+            get => _role;
+            set => _role = string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException("Role cannot be null or empty.", nameof(value))
+                : value;
+        }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }
