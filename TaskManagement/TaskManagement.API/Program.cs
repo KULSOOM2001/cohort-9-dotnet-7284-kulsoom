@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
+using System.Threading.RateLimiting;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Application.Services;
 using TaskManagement.Infrastructure.Data;
@@ -65,12 +65,19 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("AuthPolicy", opt =>
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("AuthPolicy", httpContext =>
     {
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.PermitLimit = 5;
-        opt.QueueLimit = 0;
-        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+        var clientKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(clientKey, _ => new FixedWindowRateLimiterOptions
+        {
+            Window = TimeSpan.FromMinutes(1),
+            PermitLimit = 5,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+        });
     });
 });
 
