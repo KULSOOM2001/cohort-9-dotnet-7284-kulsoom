@@ -58,9 +58,16 @@ namespace TaskManagement.API.Controllers
             if (dto == null)
                 return BadRequest(new { message = "Request body is required" });
 
-            var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
-            _logger.LogInformation("Task created with id {TaskId}", task.Id);
-            return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
+            try
+            {
+                var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
+                _logger.LogInformation("Task created with id {TaskId}", task.Id);
+                return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
@@ -69,12 +76,19 @@ namespace TaskManagement.API.Controllers
             if (dto == null)
                 return BadRequest(new { message = "Request body is required" });
 
-            var success = await _taskService.UpdateTaskAsync(id, dto, GetCurrentUserId(), GetCurrentUserRole());
-            if (!success)
-                return NotFound(new { message = "Task not found or access denied" });
+            try
+            {
+                var success = await _taskService.UpdateTaskAsync(id, dto, GetCurrentUserId(), GetCurrentUserRole());
+                if (!success)
+                    return NotFound(new { message = "Task not found or access denied" });
 
-            _logger.LogInformation("Task updated with id {TaskId}", id);
-            return Ok(new { message = "Task updated successfully" });
+                _logger.LogInformation("Task updated with id {TaskId}", id);
+                return Ok(new { message = "Task updated successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
