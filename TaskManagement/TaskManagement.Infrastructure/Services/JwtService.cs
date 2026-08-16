@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
+using TaskManagement.Application;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 
@@ -14,12 +11,12 @@ namespace TaskManagement.Infrastructure.Services
 {
     public class JwtService : IJwtService
     {
-        private readonly IConfiguration _config;
+        private readonly JwtSettings _settings;
 
-        public JwtService(IConfiguration config)
+        public JwtService(IOptions<JwtSettings> settings)
         {
-            ArgumentNullException.ThrowIfNull(config);
-            _config = config;
+            ArgumentNullException.ThrowIfNull(settings);
+            _settings = settings.Value;
         }
 
         public string GenerateToken(User user)
@@ -34,14 +31,12 @@ namespace TaskManagement.Infrastructure.Services
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var jwtKey = _config["Jwt:Key"]
-    ?? throw new InvalidOperationException("Jwt:Key configuration value is missing.");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
+                issuer: _settings.Issuer,
+                audience: _settings.Audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(8),
                 signingCredentials: creds
