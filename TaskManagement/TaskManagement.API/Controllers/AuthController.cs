@@ -13,6 +13,8 @@ namespace TaskManagement.API.Controllers
 
         public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
+            ArgumentNullException.ThrowIfNull(authService);
+            ArgumentNullException.ThrowIfNull(logger);
             _authService = authService;
             _logger = logger;
         }
@@ -25,14 +27,19 @@ namespace TaskManagement.API.Controllers
 
             var result = await _authService.RegisterAsync(dto);
 
-            if (result == null)
+            if (!result.Success)
             {
-                _logger.LogWarning("Registration failed - email already exists");
-                return BadRequest(new { message = "Email already registered" });
+                _logger.LogWarning("Registration failed: {Reason}", result.FailureReason);
+                return result.FailureReason switch
+                {
+                    AuthFailureReason.ValidationError => BadRequest(new { message = result.ErrorMessage }),
+                    AuthFailureReason.DuplicateEmail => Conflict(new { message = result.ErrorMessage }),
+                    _ => StatusCode(500, new { message = "An unexpected error occurred." })
+                };
             }
 
             _logger.LogInformation("New user registered successfully");
-            return Ok(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("login")]
@@ -43,14 +50,14 @@ namespace TaskManagement.API.Controllers
 
             var result = await _authService.LoginAsync(dto);
 
-            if (result == null)
+            if (!result.Success)
             {
                 _logger.LogWarning("Failed login attempt");
-                return Unauthorized(new { message = "Invalid email or password" });
+                return Unauthorized(new { message = result.ErrorMessage });
             }
 
             _logger.LogInformation("User logged in successfully");
-            return Ok(result);
+            return Ok(result.Data);
         }
     }
 }

@@ -48,7 +48,8 @@ namespace TaskManagement.Tests.TaskManagement
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             var dto = new CreateTaskDto
             {
@@ -68,7 +69,8 @@ namespace TaskManagement.Tests.TaskManagement
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             var dto = new CreateTaskDto
             {
@@ -84,11 +86,31 @@ namespace TaskManagement.Tests.TaskManagement
         }
 
         [Fact]
+        public async Task CreateTaskAsync_WithNonExistentAssignedUser_ThrowsArgumentException()
+        {
+            var context = await SeedUsersAsync(GetInMemoryDbContext());
+            var repository = new TaskRepository(context);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
+
+            var dto = new CreateTaskDto
+            {
+                Title = "Bad Assignment",
+                Priority = TaskPriority.Medium,
+                AssignedToUserId = 999
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => service.CreateTaskAsync(dto, currentUserId: 1, currentUserRole: "Admin"));
+        }
+
+        [Fact]
         public async Task GetTasksAsync_AsAdmin_ReturnsAllTasks()
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 1", AssignedToUserId = 1 }, 1, "Admin");
             await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 2", AssignedToUserId = 2 }, 1, "Admin");
@@ -103,7 +125,8 @@ namespace TaskManagement.Tests.TaskManagement
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 1", AssignedToUserId = 1 }, 1, "Admin");
             await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 2", AssignedToUserId = 2 }, 1, "Admin");
@@ -119,7 +142,8 @@ namespace TaskManagement.Tests.TaskManagement
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "Admin's Task", AssignedToUserId = 1 }, 1, "Admin");
 
@@ -133,7 +157,8 @@ namespace TaskManagement.Tests.TaskManagement
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "My Task", AssignedToUserId = 2 }, 2, "User");
 
@@ -151,11 +176,34 @@ namespace TaskManagement.Tests.TaskManagement
         }
 
         [Fact]
+        public async Task UpdateTaskAsync_WithEmptyTitle_ThrowsArgumentException()
+        {
+            var context = await SeedUsersAsync(GetInMemoryDbContext());
+            var repository = new TaskRepository(context);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
+
+            var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "My Task", AssignedToUserId = 2 }, 2, "User");
+
+            var updateDto = new UpdateTaskDto
+            {
+                Title = "  ",
+                Status = TaskStatusEnum.InProgress,
+                Priority = TaskPriority.High,
+                AssignedToUserId = 2
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => service.UpdateTaskAsync(created.Id, updateDto, currentUserId: 2, currentUserRole: "User"));
+        }
+
+        [Fact]
         public async Task DeleteTaskAsync_AsRegularUser_IsDenied()
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "Task", AssignedToUserId = 2 }, 2, "User");
 
@@ -169,7 +217,8 @@ namespace TaskManagement.Tests.TaskManagement
         {
             var context = await SeedUsersAsync(GetInMemoryDbContext());
             var repository = new TaskRepository(context);
-            var service = new TaskService(repository);
+            var userRepository = new UserRepository(context);
+            var service = new TaskService(repository, userRepository);
 
             var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "Task", AssignedToUserId = 2 }, 1, "Admin");
 

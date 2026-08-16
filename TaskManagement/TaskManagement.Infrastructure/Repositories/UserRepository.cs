@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 using TaskManagement.Infrastructure.Data;
@@ -16,11 +11,13 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public UserRepository(AppDbContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
             _context = context;
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(email);
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
@@ -31,6 +28,7 @@ namespace TaskManagement.Infrastructure.Repositories
 
         public async Task AddAsync(User user)
         {
+            ArgumentNullException.ThrowIfNull(user);
             await _context.Users.AddAsync(user);
         }
 
