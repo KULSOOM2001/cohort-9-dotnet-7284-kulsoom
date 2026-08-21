@@ -7,8 +7,6 @@ using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Repositories;
 using TaskManagement.Infrastructure.Services;
 using Xunit;
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace TaskManagement.Tests.Auth
 {
     public class AuthServiceTests
