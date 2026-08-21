@@ -14,10 +14,13 @@ namespace TaskManagement.API.Controllers
         private readonly ITaskService _taskService;
         private readonly ILogger<TasksController> _logger;
 
-        public TasksController(ITaskService taskService, ILogger<TasksController> logger)
+        public TasksController(
+            ITaskService taskService,
+            ILogger<TasksController> logger)
         {
             ArgumentNullException.ThrowIfNull(taskService);
             ArgumentNullException.ThrowIfNull(logger);
+
             _taskService = taskService;
             _logger = logger;
         }
@@ -25,9 +28,15 @@ namespace TaskManagement.API.Controllers
         private int GetCurrentUserId()
         {
             var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(idClaim))
-                throw new UnauthorizedAccessException("User identity claim is missing");
-            return int.Parse(idClaim);
+
+            if (string.IsNullOrEmpty(idClaim) ||
+                !int.TryParse(idClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException(
+                    "User identity claim is missing");
+            }
+
+            return userId;
         }
 
         private string GetCurrentUserRole()
@@ -39,16 +48,29 @@ namespace TaskManagement.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetTasks()
         {
-            var tasks = await _taskService.GetTasksAsync(GetCurrentUserId(), GetCurrentUserRole());
+            var tasks = await _taskService.GetTasksAsync(
+                GetCurrentUserId(),
+                GetCurrentUserRole());
+
             return Ok(tasks);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTask(int id)
         {
-            var task = await _taskService.GetTaskByIdAsync(id, GetCurrentUserId(), GetCurrentUserRole());
+            var task = await _taskService.GetTaskByIdAsync(
+                id,
+                GetCurrentUserId(),
+                GetCurrentUserRole());
+
             if (task == null)
-                return NotFound(new { message = "Task not found or access denied" });
+            {
+                return NotFound(new
+                {
+                    message = "Task not found or access denied"
+                });
+            }
+
             return Ok(task);
         }
 
@@ -56,50 +78,89 @@ namespace TaskManagement.API.Controllers
         public async Task<IActionResult> CreateTask(CreateTaskDto dto)
         {
             if (dto == null)
-                return BadRequest(new { message = "Request body is required" });
+            {
+                return BadRequest(new
+                {
+                    message = "Request body is required"
+                });
+            }
 
-            try
-            {
-                var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
-                _logger.LogInformation("Task created with id {TaskId}", task.Id);
-                return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var task = await _taskService.CreateTaskAsync(
+                dto,
+                GetCurrentUserId(),
+                GetCurrentUserRole());
+
+            _logger.LogInformation(
+                "Task created with id {TaskId}",
+                task.Id);
+
+            return CreatedAtAction(
+                nameof(GetTask),
+                new { id = task.Id },
+                task);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(int id, UpdateTaskDto dto)
+        public async Task<IActionResult> UpdateTask(
+            int id,
+            UpdateTaskDto dto)
         {
             if (dto == null)
-                return BadRequest(new { message = "Request body is required" });
-
-            try
             {
-                var success = await _taskService.UpdateTaskAsync(id, dto, GetCurrentUserId(), GetCurrentUserRole());
-                if (!success)
-                    return NotFound(new { message = "Task not found or access denied" });
+                return BadRequest(new
+                {
+                    message = "Request body is required"
+                });
+            }
 
-                _logger.LogInformation("Task updated with id {TaskId}", id);
-                return Ok(new { message = "Task updated successfully" });
-            }
-            catch (ArgumentException ex)
+            var success = await _taskService.UpdateTaskAsync(
+                id,
+                dto,
+                GetCurrentUserId(),
+                GetCurrentUserRole());
+
+            if (!success)
             {
-                return BadRequest(new { message = ex.Message });
+                return NotFound(new
+                {
+                    message = "Task not found or access denied"
+                });
             }
+
+            _logger.LogInformation(
+                "Task updated with id {TaskId}",
+                id);
+
+            return Ok(new
+            {
+                message = "Task updated successfully"
+            });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var success = await _taskService.DeleteTaskAsync(id, GetCurrentUserId(), GetCurrentUserRole());
-            if (!success)
-                return NotFound(new { message = "Task not found or access denied" });
+            var success = await _taskService.DeleteTaskAsync(
+                id,
+                GetCurrentUserId(),
+                GetCurrentUserRole());
 
-            _logger.LogWarning("Task deleted with id {TaskId}", id);
-            return Ok(new { message = "Task deleted successfully" });
+            if (!success)
+            {
+                return NotFound(new
+                {
+                    message = "Task not found or access denied"
+                });
+            }
+
+            _logger.LogWarning(
+                "Task deleted with id {TaskId}",
+                id);
+
+            return Ok(new
+            {
+                message = "Task deleted successfully"
+            });
         }
     }
 }

@@ -1,4 +1,9 @@
-﻿using TaskManagement.Application.DTOs;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 
@@ -41,19 +46,20 @@ namespace TaskManagement.Application.Services
 
         public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, int currentUserId, string currentUserRole)
         {
-            ArgumentNullException.ThrowIfNull(dto);
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
             if (string.IsNullOrWhiteSpace(dto.Title))
                 throw new ArgumentException("Task title is required");
 
             if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
-                throw new ArgumentException("Invalid task priority");
+                throw new ArgumentException("Invalid priority value");
 
             var assignedToId = currentUserRole == "Admin" ? dto.AssignedToUserId : currentUserId;
 
             var assignedUser = await _userRepository.GetByIdAsync(assignedToId);
             if (assignedUser == null)
-                throw new ArgumentException($"Assigned user with id {assignedToId} does not exist");
+                throw new ArgumentException("Assigned user does not exist");
 
             var task = new TaskItem
             {
@@ -63,7 +69,6 @@ namespace TaskManagement.Application.Services
                 Category = dto.Category,
                 DueDate = dto.DueDate,
                 AssignedToUserId = assignedToId,
-                AssignedToUser = assignedUser,
                 Status = TaskStatusEnum.Pending
             };
 
@@ -79,16 +84,8 @@ namespace TaskManagement.Application.Services
 
         public async Task<bool> UpdateTaskAsync(int id, UpdateTaskDto dto, int currentUserId, string currentUserRole)
         {
-            ArgumentNullException.ThrowIfNull(dto);
-
-            if (string.IsNullOrWhiteSpace(dto.Title))
-                throw new ArgumentException("Task title is required");
-
-            if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
-                throw new ArgumentException("Invalid task priority");
-
-            if (!Enum.IsDefined(typeof(TaskStatusEnum), dto.Status))
-                throw new ArgumentException("Invalid task status");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
             var task = await _taskRepository.GetByIdAsync(id);
 
@@ -98,6 +95,15 @@ namespace TaskManagement.Application.Services
             if (currentUserRole != "Admin" && task.AssignedToUserId != currentUserId)
                 return false;
 
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new ArgumentException("Task title is required");
+
+            if (!Enum.IsDefined(typeof(TaskStatusEnum), dto.Status))
+                throw new ArgumentException("Invalid status value");
+
+            if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
+                throw new ArgumentException("Invalid priority value");
+
             task.Title = dto.Title;
             task.Description = dto.Description;
             task.Status = dto.Status;
@@ -105,15 +111,13 @@ namespace TaskManagement.Application.Services
             task.Category = dto.Category;
             task.DueDate = dto.DueDate;
 
-            // Only Admin can reassign a task to someone else
-            if (currentUserRole == "Admin" && dto.AssignedToUserId != task.AssignedToUserId)
+            if (currentUserRole == "Admin")
             {
                 var assignedUser = await _userRepository.GetByIdAsync(dto.AssignedToUserId);
                 if (assignedUser == null)
-                    throw new ArgumentException($"Assigned user with id {dto.AssignedToUserId} does not exist");
+                    throw new ArgumentException("Assigned user does not exist");
 
                 task.AssignedToUserId = dto.AssignedToUserId;
-                task.AssignedToUser = assignedUser;
             }
 
             _taskRepository.Update(task);

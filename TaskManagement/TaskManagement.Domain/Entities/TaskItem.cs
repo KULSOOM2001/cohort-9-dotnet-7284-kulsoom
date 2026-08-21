@@ -1,4 +1,10 @@
-﻿namespace TaskManagement.Domain.Entities
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace TaskManagement.Domain.Entities
 {
     public enum TaskStatusEnum
     {
@@ -17,16 +23,18 @@
     public class TaskItem
     {
         private string _title = string.Empty;
-        private User _assignedToUser = null!;
 
         public int Id { get; set; }
 
-        public required string Title
+        public string Title
         {
             get => _title;
-            set => _title = string.IsNullOrWhiteSpace(value)
-                ? throw new ArgumentException("Title cannot be null or empty.", nameof(value))
-                : value;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Title cannot be null or empty", nameof(Title));
+                _title = value;
+            }
         }
 
         public string? Description { get; set; }
@@ -35,12 +43,8 @@
         public string? Category { get; set; }
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public int AssignedToUserId { get; set; }
 
-        public required User AssignedToUser
-        {
-            get => _assignedToUser;
-            set => _assignedToUser = value ?? throw new ArgumentNullException(nameof(value));
-        }
+        public int AssignedToUserId { get; set; }
+        public User AssignedToUser { get; set; } = null!;
     }
 }

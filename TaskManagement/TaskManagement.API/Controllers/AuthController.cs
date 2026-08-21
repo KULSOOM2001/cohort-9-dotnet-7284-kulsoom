@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using TaskManagement.Application.DTOs;
+using TaskManagement.Application.Exceptions;
 using TaskManagement.Application.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TaskManagement.API.Controllers
 {
@@ -16,31 +17,33 @@ namespace TaskManagement.API.Controllers
         {
             ArgumentNullException.ThrowIfNull(authService);
             ArgumentNullException.ThrowIfNull(logger);
+
             _authService = authService;
             _logger = logger;
         }
 
         [HttpPost("register")]
-        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             if (dto == null)
                 return BadRequest(new { message = "Request body is required" });
 
-            var result = await _authService.RegisterAsync(dto);
-
-            if (result == null)
+            try
             {
-                _logger.LogWarning("Registration failed - email already exists");
+                var result = await _authService.RegisterAsync(dto);
+
+                _logger.LogInformation("New user registered successfully");
+                return Ok(result);
+            }
+            catch (DuplicateEmailException)
+            {
+                _logger.LogWarning("Registration failed because the email is already registered");
                 return Conflict(new { message = "Email already registered" });
             }
-
-            _logger.LogInformation("New user registered successfully");
-            return Ok(result);
         }
 
         [HttpPost("login")]
-        [EnableRateLimiting("AuthPolicy")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
             if (dto == null)

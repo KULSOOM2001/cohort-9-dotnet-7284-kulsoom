@@ -1,21 +1,22 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Threading.RateLimiting;
 using Serilog;
+using System.Text;
+using TaskManagement.API.Middleware;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using TaskManagement.Application.Interfaces;
+using TaskManagement.Application.Services;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Repositories;
 using TaskManagement.Infrastructure.Services;
-using TaskManagement.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Async(a => a.Console())
-    .WriteTo.Async(a => a.File("Logs/log-.txt", rollingInterval: RollingInterval.Day))
+    .WriteTo.Console()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -57,20 +58,18 @@ builder.Services.AddSwaggerGen(options =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' is missing in configuration.");
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
-
 builder.Services.AddAuthorization();
 
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    options.AddPolicy("AuthPolicy", httpContext =>
+    options.AddPolicy("auth", httpContext =>
     {
         var clientKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
@@ -83,30 +82,24 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 });
-
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-
 if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetByteCount(jwtKey) < 32)
 {
-    throw new InvalidOperationException(
-        "Jwt:Key is missing or too short (min 32 bytes required). " +
-        "Set it via: dotnet user-secrets set \"Jwt:Key\" \"<your-strong-random-key>\"");
+    throw new InvalidOperationException("JWT Key is not configured or is too short. It must be at least 32 UTF-8 bytes (256 bits) for HMAC-SHA256.");
 }
-if (string.IsNullOrWhiteSpace(jwtIssuer))
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+if (string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
 {
-    throw new InvalidOperationException("Jwt:Issuer is missing in configuration.");
-}
-if (string.IsNullOrWhiteSpace(jwtAudience))
-{
-    throw new InvalidOperationException("Jwt:Audience is missing in configuration.");
+    throw new InvalidOperationException("JWT Issuer or Audience is not configured.");
 }
 
 builder.Services.AddAuthentication(options =>
@@ -140,6 +133,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -148,8 +143,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
-app.UseAuthentication();
 app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
