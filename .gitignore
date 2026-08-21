@@ -1,7 +1,9 @@
-bin/ 
-obj/ 
-.vs/ 
-*.user 
+bin/
+obj/
+.vs/
+*.user
+Logs/
+*.Backup.tmp
 taskmanagement-client/node_modules/
 taskmanagement-client/dist/
 TaskManagement/TaskManagement.API/Logs/
