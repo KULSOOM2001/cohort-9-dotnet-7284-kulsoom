@@ -18,6 +18,7 @@ namespace TaskManagement.API.Controllers
             ArgumentNullException.ThrowIfNull(logger);
             _logger = logger;
         }
+
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {

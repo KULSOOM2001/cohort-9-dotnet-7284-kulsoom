@@ -58,7 +58,10 @@ namespace TaskManagement.Tests.TaskManagement
                 AssignedToUserId = 2
             };
 
-            var result = await service.CreateTaskAsync(dto, currentUserId: 1, currentUserRole: "Admin");
+            var result = await service.CreateTaskAsync(
+                dto,
+                currentUserId: 1,
+                currentUserRole: "Admin");
 
             Assert.NotNull(result);
             Assert.Equal(2, result.AssignedToUserId);
@@ -79,7 +82,10 @@ namespace TaskManagement.Tests.TaskManagement
                 AssignedToUserId = 1
             };
 
-            var result = await service.CreateTaskAsync(dto, currentUserId: 2, currentUserRole: "User");
+            var result = await service.CreateTaskAsync(
+                dto,
+                currentUserId: 2,
+                currentUserRole: "User");
 
             Assert.NotNull(result);
             Assert.Equal(2, result.AssignedToUserId);
@@ -101,7 +107,10 @@ namespace TaskManagement.Tests.TaskManagement
             };
 
             await Assert.ThrowsAsync<ArgumentException>(
-                () => service.CreateTaskAsync(dto, currentUserId: 1, currentUserRole: "Admin"));
+                () => service.CreateTaskAsync(
+                    dto,
+                    currentUserId: 1,
+                    currentUserRole: "Admin"));
         }
 
         [Fact]
@@ -112,10 +121,27 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 1", AssignedToUserId = 1 }, 1, "Admin");
-            await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 2", AssignedToUserId = 2 }, 1, "Admin");
+            await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Task 1",
+                    AssignedToUserId = 1
+                },
+                1,
+                "Admin");
 
-            var result = await service.GetTasksAsync(currentUserId: 1, currentUserRole: "Admin");
+            await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Task 2",
+                    AssignedToUserId = 2
+                },
+                1,
+                "Admin");
+
+            var result = await service.GetTasksAsync(
+                currentUserId: 1,
+                currentUserRole: "Admin");
 
             Assert.Equal(2, result.Count);
         }
@@ -128,10 +154,27 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 1", AssignedToUserId = 1 }, 1, "Admin");
-            await service.CreateTaskAsync(new CreateTaskDto { Title = "Task 2", AssignedToUserId = 2 }, 1, "Admin");
+            await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Task 1",
+                    AssignedToUserId = 1
+                },
+                1,
+                "Admin");
 
-            var result = await service.GetTasksAsync(currentUserId: 2, currentUserRole: "User");
+            await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Task 2",
+                    AssignedToUserId = 2
+                },
+                1,
+                "Admin");
+
+            var result = await service.GetTasksAsync(
+                currentUserId: 2,
+                currentUserRole: "User");
 
             Assert.Single(result);
             Assert.Equal(2, result[0].AssignedToUserId);
@@ -145,9 +188,19 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "Admin's Task", AssignedToUserId = 1 }, 1, "Admin");
+            var created = await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Admin's Task",
+                    AssignedToUserId = 1
+                },
+                1,
+                "Admin");
 
-            var result = await service.GetTaskByIdAsync(created.Id, currentUserId: 2, currentUserRole: "User");
+            var result = await service.GetTaskByIdAsync(
+                created.Id,
+                currentUserId: 2,
+                currentUserRole: "User");
 
             Assert.Null(result);
         }
@@ -160,7 +213,14 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "My Task", AssignedToUserId = 2 }, 2, "User");
+            var created = await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "My Task",
+                    AssignedToUserId = 2
+                },
+                2,
+                "User");
 
             var updateDto = new UpdateTaskDto
             {
@@ -170,7 +230,11 @@ namespace TaskManagement.Tests.TaskManagement
                 AssignedToUserId = 2
             };
 
-            var success = await service.UpdateTaskAsync(created.Id, updateDto, currentUserId: 2, currentUserRole: "User");
+            var success = await service.UpdateTaskAsync(
+                created.Id,
+                updateDto,
+                currentUserId: 2,
+                currentUserRole: "User");
 
             Assert.True(success);
         }
@@ -183,7 +247,14 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "My Task", AssignedToUserId = 2 }, 2, "User");
+            var created = await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "My Task",
+                    AssignedToUserId = 2
+                },
+                2,
+                "User");
 
             var updateDto = new UpdateTaskDto
             {
@@ -194,7 +265,11 @@ namespace TaskManagement.Tests.TaskManagement
             };
 
             await Assert.ThrowsAsync<ArgumentException>(
-                () => service.UpdateTaskAsync(created.Id, updateDto, currentUserId: 2, currentUserRole: "User"));
+                () => service.UpdateTaskAsync(
+                    created.Id,
+                    updateDto,
+                    currentUserId: 2,
+                    currentUserRole: "User"));
         }
 
         [Fact]
@@ -205,9 +280,19 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "Task", AssignedToUserId = 2 }, 2, "User");
+            var created = await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Task",
+                    AssignedToUserId = 2
+                },
+                2,
+                "User");
 
-            var success = await service.DeleteTaskAsync(created.Id, currentUserRole: "User");
+            var success = await service.DeleteTaskAsync(
+                created.Id,
+                currentUserId: 2,
+                currentUserRole: "User");
 
             Assert.False(success);
         }
@@ -220,9 +305,19 @@ namespace TaskManagement.Tests.TaskManagement
             var userRepository = new UserRepository(context);
             var service = new TaskService(repository, userRepository);
 
-            var created = await service.CreateTaskAsync(new CreateTaskDto { Title = "Task", AssignedToUserId = 2 }, 1, "Admin");
+            var created = await service.CreateTaskAsync(
+                new CreateTaskDto
+                {
+                    Title = "Task",
+                    AssignedToUserId = 2
+                },
+                1,
+                "Admin");
 
-            var success = await service.DeleteTaskAsync(created.Id, currentUserRole: "Admin");
+            var success = await service.DeleteTaskAsync(
+                created.Id,
+                currentUserId: 1,
+                currentUserRole: "Admin");
 
             Assert.True(success);
         }

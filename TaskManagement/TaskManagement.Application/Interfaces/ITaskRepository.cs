@@ -12,6 +12,7 @@ namespace TaskManagement.Application.Interfaces
         Task<List<TaskItem>> GetAllAsync();
         Task<List<TaskItem>> GetByUserIdAsync(int userId);
         Task<TaskItem?> GetByIdAsync(int id);
+        Task<Dictionary<TaskStatusEnum, int>> GetStatusCountsAsync(int? userId);
         Task AddAsync(TaskItem task);
         void Update(TaskItem task);
         void Delete(TaskItem task);

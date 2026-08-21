@@ -13,6 +13,6 @@ namespace TaskManagement.Application.Interfaces
         Task<TaskResponseDto?> GetTaskByIdAsync(int id, int currentUserId, string currentUserRole);
         Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, int currentUserId, string currentUserRole);
         Task<bool> UpdateTaskAsync(int id, UpdateTaskDto dto, int currentUserId, string currentUserRole);
-        Task<bool> DeleteTaskAsync(int id, string currentUserRole);
+        Task<bool> DeleteTaskAsync(int id, int currentUserId, string currentUserRole);
     }
 }
