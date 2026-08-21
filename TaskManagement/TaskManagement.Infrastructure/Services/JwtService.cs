@@ -1,8 +1,12 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 
@@ -28,8 +32,6 @@ namespace TaskManagement.Infrastructure.Services
 
             if (string.IsNullOrWhiteSpace(jwtKey))
                 throw new InvalidOperationException("JWT Key is not configured");
-            if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
-                throw new InvalidOperationException("JWT Key must be at least 32 UTF-8 bytes for HMAC-SHA256");
             if (string.IsNullOrWhiteSpace(issuer))
                 throw new InvalidOperationException("JWT Issuer is not configured");
             if (string.IsNullOrWhiteSpace(audience))
@@ -37,7 +39,6 @@ namespace TaskManagement.Infrastructure.Services
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.FullName),
@@ -51,7 +52,7 @@ namespace TaskManagement.Infrastructure.Services
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(60),
+                expires: DateTime.UtcNow.AddHours(8),
                 signingCredentials: creds
             );
 

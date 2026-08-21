@@ -8,9 +8,7 @@ namespace TaskManagement.API.Middleware
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(
-            RequestDelegate next,
-            ILogger<ExceptionHandlingMiddleware> logger)
+        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             ArgumentNullException.ThrowIfNull(next);
             ArgumentNullException.ThrowIfNull(logger);
@@ -21,6 +19,8 @@ namespace TaskManagement.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
+
             try
             {
                 await _next(context);
@@ -38,29 +38,17 @@ namespace TaskManagement.API.Middleware
             }
         }
 
-        private static Task HandleExceptionAsync(
-            HttpContext context,
-            Exception exception)
+        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
 
             var (statusCode, message) = exception switch
             {
-                UnauthorizedAccessException =>
-                    (HttpStatusCode.Unauthorized,
-                     "You are not authorized to perform this action."),
-
-                ArgumentException =>
-                    (HttpStatusCode.BadRequest,
-                     "The request contains invalid data."),
-
-                KeyNotFoundException =>
-                    (HttpStatusCode.NotFound,
-                     "The requested resource was not found."),
-
-                _ =>
-                    (HttpStatusCode.InternalServerError,
-                     "An unexpected error occurred. Please try again later.")
+                ArgumentNullException => (HttpStatusCode.InternalServerError, "An unexpected error occurred. Please try again later."),
+                UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "You are not authorized to perform this action."),
+                ArgumentException => (HttpStatusCode.BadRequest, "The request contains invalid data."),
+                KeyNotFoundException => (HttpStatusCode.NotFound, "The requested resource was not found."),
+                _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred. Please try again later.")
             };
 
             context.Response.StatusCode = (int)statusCode;
@@ -72,7 +60,6 @@ namespace TaskManagement.API.Middleware
             };
 
             var json = JsonSerializer.Serialize(response);
-
             return context.Response.WriteAsync(json);
         }
     }

@@ -15,8 +15,8 @@ using TaskManagement.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Async(a => a.Console())
-    .WriteTo.Async(a => a.File("Logs/log-.txt", rollingInterval: RollingInterval.Day))
+    .WriteTo.Console()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -48,11 +48,12 @@ builder.Services.AddSwaggerGen(options =>
             {
                 new Microsoft.OpenApi.Models.OpenApiSecurityScheme
                 {
-                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
+                    Reference =
+                        new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
                 },
                 new string[] { }
             }
@@ -73,31 +74,27 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddAuthorization();
 
-
-// Rate limiting for authentication endpoints
 builder.Services.AddRateLimiter(options =>
 {
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.AddPolicy("auth", httpContext =>
+    options.AddPolicy<string>("auth", httpContext =>
     {
-        var clientKey =
+        var clientIp =
             httpContext.Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
 
         return RateLimitPartition.GetFixedWindowLimiter(
-            clientKey,
+            clientIp,
             _ => new FixedWindowRateLimiterOptions
             {
-                Window = TimeSpan.FromMinutes(1),
                 PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
-                QueueProcessingOrder =
-                    QueueProcessingOrder.OldestFirst
+                AutoReplenishment = true
             });
     });
-});
 
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -106,7 +103,6 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
-
 var jwtKey = builder.Configuration["Jwt:Key"];
 
 if (string.IsNullOrWhiteSpace(jwtKey) ||
@@ -114,7 +110,7 @@ if (string.IsNullOrWhiteSpace(jwtKey) ||
 {
     throw new InvalidOperationException(
         "JWT Key is not configured or is too short. " +
-        "It must be at least 32 UTF-8 bytes (256 bits) for HMAC-SHA256.");
+        "It must be at least 32 characters (256 bits) for HMAC-SHA256.");
 }
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -126,7 +122,6 @@ if (string.IsNullOrWhiteSpace(jwtIssuer) ||
     throw new InvalidOperationException(
         "JWT Issuer or Audience is not configured.");
 }
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -154,7 +149,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -167,13 +161,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 var app = builder.Build();
 
-
-// Global exception handling
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -185,11 +175,11 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowReactApp");
 
-app.UseRateLimiter();
-
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 

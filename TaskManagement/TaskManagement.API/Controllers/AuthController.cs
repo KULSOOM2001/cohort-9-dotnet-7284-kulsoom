@@ -27,47 +27,24 @@ namespace TaskManagement.API.Controllers
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             if (dto == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Request body is required"
-                });
-            }
+                return BadRequest(
+                    new { message = "Request body is required" });
 
             var result = await _authService.RegisterAsync(dto);
 
-            if (!result.Success)
+            if (result == null)
             {
                 _logger.LogWarning(
-                    "Registration failed: {Reason}",
-                    result.FailureReason);
+                    "Registration failed - email already exists");
 
-                return result.FailureReason switch
-                {
-                    AuthFailureReason.ValidationError =>
-                        BadRequest(new
-                        {
-                            message = result.ErrorMessage
-                        }),
-
-                    AuthFailureReason.DuplicateEmail =>
-                        Conflict(new
-                        {
-                            message = result.ErrorMessage
-                        }),
-
-                    _ =>
-                        StatusCode(500, new
-                        {
-                            message = "An unexpected error occurred."
-                        })
-                };
+                return BadRequest(
+                    new { message = "Email already registered" });
             }
 
             _logger.LogInformation(
                 "New user registered successfully");
 
-            return Ok(result.Data);
+            return Ok(result);
         }
 
         [HttpPost("login")]
@@ -75,30 +52,24 @@ namespace TaskManagement.API.Controllers
         public async Task<IActionResult> Login(LoginDto dto)
         {
             if (dto == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Request body is required"
-                });
-            }
+                return BadRequest(
+                    new { message = "Request body is required" });
 
             var result = await _authService.LoginAsync(dto);
 
-            if (!result.Success)
+            if (result == null)
             {
                 _logger.LogWarning(
                     "Failed login attempt");
 
-                return Unauthorized(new
-                {
-                    message = result.ErrorMessage
-                });
+                return Unauthorized(
+                    new { message = "Invalid email or password" });
             }
 
             _logger.LogInformation(
                 "User logged in successfully");
 
-            return Ok(result.Data);
+            return Ok(result);
         }
     }
 }

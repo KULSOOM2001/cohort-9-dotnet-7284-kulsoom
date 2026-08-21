@@ -23,20 +23,20 @@ namespace TaskManagement.Application.Services
             _logger = logger;
         }
 
-        public async Task<AuthResult> RegisterAsync(RegisterDto dto)
+        public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
         {
             if (dto == null
                 || string.IsNullOrWhiteSpace(dto.Email)
                 || string.IsNullOrWhiteSpace(dto.Password)
                 || string.IsNullOrWhiteSpace(dto.FullName))
             {
-                return AuthResult.Failure(AuthFailureReason.ValidationError, "FullName, Email, and Password are required.");
+                return null;
             }
 
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
             if (existingUser != null)
             {
-                return AuthResult.Failure(AuthFailureReason.DuplicateEmail, "Email already registered.");
+                return null;
             }
 
             var user = new User
@@ -55,45 +55,45 @@ namespace TaskManagement.Application.Services
             catch (DbUpdateException ex)
             {
                 _logger.LogError(ex, "Failed to persist new user during registration");
-                return AuthResult.Failure(AuthFailureReason.PersistenceError, "Registration failed due to a server error.");
+                return null;
             }
 
             var token = _jwtService.GenerateToken(user);
 
-            return AuthResult.SuccessResult(new AuthResponseDto
+            return new AuthResponseDto
             {
                 Token = token,
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role
-            });
+            };
         }
 
-        public async Task<AuthResult> LoginAsync(LoginDto dto)
+        public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
             if (dto == null
                 || string.IsNullOrWhiteSpace(dto.Email)
                 || string.IsNullOrWhiteSpace(dto.Password))
             {
-                return AuthResult.Failure(AuthFailureReason.ValidationError, "Email and Password are required.");
+                return null;
             }
 
             var user = await _userRepository.GetByEmailAsync(dto.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
-                return AuthResult.Failure(AuthFailureReason.InvalidCredentials, "Invalid email or password.");
+                return null;
             }
 
             var token = _jwtService.GenerateToken(user);
 
-            return AuthResult.SuccessResult(new AuthResponseDto
+            return new AuthResponseDto
             {
                 Token = token,
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role
-            });
+            };
         }
     }
 }

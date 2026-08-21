@@ -6,7 +6,7 @@ namespace TaskManagement.API
 
         public int TemperatureC { get; set; }
 
-        public int TemperatureF => (int)(TemperatureC * 9.0 / 5.0 + 32);
+        public int TemperatureF => (int)(32 + TemperatureC * 9.0 / 5.0);
 
         public string? Summary { get; set; }
     }

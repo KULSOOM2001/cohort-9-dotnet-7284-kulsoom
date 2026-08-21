@@ -7,7 +7,6 @@ using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Repositories;
 using TaskManagement.Infrastructure.Services;
 using Xunit;
-
 namespace TaskManagement.Tests.Auth
 {
     public class AuthServiceTests
@@ -15,7 +14,7 @@ namespace TaskManagement.Tests.Auth
         private AppDbContext GetInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()) 
                 .Options;
 
             return new AppDbContext(options);
@@ -54,15 +53,14 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.RegisterAsync(dto);
 
-            Assert.True(result.Success);
-            Assert.NotNull(result.Data);
-            Assert.Equal("testuser@example.com", result.Data!.Email);
-            Assert.Equal("User", result.Data.Role);
-            Assert.False(string.IsNullOrEmpty(result.Data.Token));
+            Assert.NotNull(result);
+            Assert.Equal("testuser@example.com", result.Email);
+            Assert.Equal("User", result.Role); 
+            Assert.False(string.IsNullOrEmpty(result.Token));
         }
 
         [Fact]
-        public async Task RegisterAsync_WithDuplicateEmail_ReturnsDuplicateFailure()
+        public async Task RegisterAsync_WithDuplicateEmail_ReturnsNull()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -76,16 +74,15 @@ namespace TaskManagement.Tests.Auth
                 Password = "Test123!"
             };
 
-            await authService.RegisterAsync(dto);
+            await authService.RegisterAsync(dto); 
 
             var result = await authService.RegisterAsync(dto);
 
-            Assert.False(result.Success);
-            Assert.Equal(AuthFailureReason.DuplicateEmail, result.FailureReason);
+            Assert.Null(result);
         }
 
         [Fact]
-        public async Task RegisterAsync_WithEmptyEmail_ReturnsValidationFailure()
+        public async Task RegisterAsync_WithEmptyEmail_ReturnsNull()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -101,8 +98,7 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.RegisterAsync(dto);
 
-            Assert.False(result.Success);
-            Assert.Equal(AuthFailureReason.ValidationError, result.FailureReason);
+            Assert.Null(result);
         }
 
         [Fact]
@@ -129,13 +125,12 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.LoginAsync(loginDto);
 
-            Assert.True(result.Success);
-            Assert.NotNull(result.Data);
-            Assert.False(string.IsNullOrEmpty(result.Data!.Token));
+            Assert.NotNull(result);
+            Assert.False(string.IsNullOrEmpty(result.Token));
         }
 
         [Fact]
-        public async Task LoginAsync_WithWrongPassword_ReturnsFailure()
+        public async Task LoginAsync_WithWrongPassword_ReturnsNull()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -158,12 +153,11 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.LoginAsync(loginDto);
 
-            Assert.False(result.Success);
-            Assert.Equal(AuthFailureReason.InvalidCredentials, result.FailureReason);
+            Assert.Null(result);
         }
 
         [Fact]
-        public async Task LoginAsync_WithNonExistentEmail_ReturnsFailure()
+        public async Task LoginAsync_WithNonExistentEmail_ReturnsNull()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -178,8 +172,7 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.LoginAsync(loginDto);
 
-            Assert.False(result.Success);
-            Assert.Equal(AuthFailureReason.InvalidCredentials, result.FailureReason);
+            Assert.Null(result);
         }
     }
 }
