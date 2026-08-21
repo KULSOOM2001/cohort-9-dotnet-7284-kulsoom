@@ -1,4 +1,10 @@
-﻿namespace TaskManagement.Domain.Entities
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace TaskManagement.Domain.Entities
 {
     public class User
     {
@@ -10,36 +16,48 @@
 
         public int Id { get; set; }
 
-        public required string FullName
+        public string FullName
         {
             get => _fullName;
-            set => _fullName = string.IsNullOrWhiteSpace(value)
-                ? throw new ArgumentException("FullName cannot be null or empty.", nameof(value))
-                : value;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("FullName cannot be null or empty", nameof(FullName));
+                _fullName = value;
+            }
         }
 
-        public required string Email
+        public string Email
         {
             get => _email;
-            set => _email = string.IsNullOrWhiteSpace(value)
-                ? throw new ArgumentException("Email cannot be null or empty.", nameof(value))
-                : value;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Email cannot be null or empty", nameof(Email));
+                _email = value;
+            }
         }
 
-        public required string PasswordHash
+        public string PasswordHash
         {
             get => _passwordHash;
-            set => _passwordHash = string.IsNullOrWhiteSpace(value)
-                ? throw new ArgumentException("PasswordHash cannot be null or empty.", nameof(value))
-                : value;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("PasswordHash cannot be null or empty", nameof(PasswordHash));
+                _passwordHash = value;
+            }
         }
 
         public string Role
         {
             get => _role;
-            set => _role = string.IsNullOrWhiteSpace(value)
-                ? throw new ArgumentException("Role cannot be null or empty.", nameof(value))
-                : value;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Role cannot be null or empty", nameof(Role));
+                _role = value;
+            }
         }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -47,7 +65,7 @@
         public ICollection<TaskItem> Tasks
         {
             get => _tasks;
-            set => _tasks = value ?? throw new ArgumentNullException(nameof(value));
+            set => _tasks = value ?? throw new ArgumentNullException(nameof(Tasks));
         }
     }
 }
