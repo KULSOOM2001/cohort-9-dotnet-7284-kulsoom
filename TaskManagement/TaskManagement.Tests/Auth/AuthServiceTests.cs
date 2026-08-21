@@ -1,9 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging.Abstractions;
-using System;
 using TaskManagement.Application.DTOs;
-using TaskManagement.Application.Exceptions;
 using TaskManagement.Application.Services;
 using TaskManagement.Infrastructure.Data;
 using TaskManagement.Infrastructure.Repositories;
@@ -56,14 +54,15 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.RegisterAsync(dto);
 
-            Assert.NotNull(result);
-            Assert.Equal("testuser@example.com", result.Email);
-            Assert.Equal("User", result.Role);
-            Assert.False(string.IsNullOrEmpty(result.Token));
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal("testuser@example.com", result.Data!.Email);
+            Assert.Equal("User", result.Data.Role);
+            Assert.False(string.IsNullOrEmpty(result.Data.Token));
         }
 
         [Fact]
-        public async Task RegisterAsync_WithDuplicateEmail_ThrowsDuplicateEmailException()
+        public async Task RegisterAsync_WithDuplicateEmail_ReturnsDuplicateFailure()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -79,12 +78,14 @@ namespace TaskManagement.Tests.Auth
 
             await authService.RegisterAsync(dto);
 
-            await Assert.ThrowsAsync<DuplicateEmailException>(() => authService.RegisterAsync(dto));
+            var result = await authService.RegisterAsync(dto);
+
+            Assert.False(result.Success);
+            Assert.Equal(AuthFailureReason.DuplicateEmail, result.FailureReason);
         }
 
         [Fact]
-        public async Task RegisterAsync_WithEmptyEmail_IsRejectedByDtoValidation()
-
+        public async Task RegisterAsync_WithEmptyEmail_ReturnsValidationFailure()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -98,7 +99,10 @@ namespace TaskManagement.Tests.Auth
                 Password = "Test123!"
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => authService.RegisterAsync(dto));
+            var result = await authService.RegisterAsync(dto);
+
+            Assert.False(result.Success);
+            Assert.Equal(AuthFailureReason.ValidationError, result.FailureReason);
         }
 
         [Fact]
@@ -125,12 +129,13 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.LoginAsync(loginDto);
 
-            Assert.NotNull(result);
-            Assert.False(string.IsNullOrEmpty(result.Token));
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.False(string.IsNullOrEmpty(result.Data!.Token));
         }
 
         [Fact]
-        public async Task LoginAsync_WithWrongPassword_ReturnsNull()
+        public async Task LoginAsync_WithWrongPassword_ReturnsFailure()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -153,11 +158,12 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.LoginAsync(loginDto);
 
-            Assert.Null(result);
+            Assert.False(result.Success);
+            Assert.Equal(AuthFailureReason.InvalidCredentials, result.FailureReason);
         }
 
         [Fact]
-        public async Task LoginAsync_WithNonExistentEmail_ReturnsNull()
+        public async Task LoginAsync_WithNonExistentEmail_ReturnsFailure()
         {
             var context = GetInMemoryDbContext();
             var userRepository = new UserRepository(context);
@@ -172,7 +178,8 @@ namespace TaskManagement.Tests.Auth
 
             var result = await authService.LoginAsync(loginDto);
 
-            Assert.Null(result);
+            Assert.False(result.Success);
+            Assert.Equal(AuthFailureReason.InvalidCredentials, result.FailureReason);
         }
     }
 }

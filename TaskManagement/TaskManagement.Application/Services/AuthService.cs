@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TaskManagement.Application.DTOs;
-using TaskManagement.Application.Exceptions;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
 
@@ -13,10 +12,7 @@ namespace TaskManagement.Application.Services
         private readonly IJwtService _jwtService;
         private readonly ILogger<AuthService> _logger;
 
-        public AuthService(
-            IUserRepository userRepository,
-            IJwtService jwtService,
-            ILogger<AuthService> logger)
+        public AuthService(IUserRepository userRepository, IJwtService jwtService, ILogger<AuthService> logger)
         {
             ArgumentNullException.ThrowIfNull(userRepository);
             ArgumentNullException.ThrowIfNull(jwtService);
@@ -27,16 +23,20 @@ namespace TaskManagement.Application.Services
             _logger = logger;
         }
 
-        public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
+        public async Task<AuthResult> RegisterAsync(RegisterDto dto)
         {
-            ArgumentNullException.ThrowIfNull(dto);
+            if (dto == null
+                || string.IsNullOrWhiteSpace(dto.Email)
+                || string.IsNullOrWhiteSpace(dto.Password)
+                || string.IsNullOrWhiteSpace(dto.FullName))
+            {
+                return AuthResult.Failure(AuthFailureReason.ValidationError, "FullName, Email, and Password are required.");
+            }
 
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
-
             if (existingUser != null)
             {
-                throw new DuplicateEmailException(
-                    "Email is already registered.");
+                return AuthResult.Failure(AuthFailureReason.DuplicateEmail, "Email already registered.");
             }
 
             var user = new User
@@ -52,93 +52,48 @@ namespace TaskManagement.Application.Services
                 await _userRepository.AddAsync(user);
                 await _userRepository.SaveChangesAsync();
             }
-            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Registration rejected because the email is already registered");
-
-                throw new DuplicateEmailException(
-                    "Email is already registered.",
-                    ex);
-            }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Failed to persist new user during registration");
-
-                throw;
+                _logger.LogError(ex, "Failed to persist new user during registration");
+                return AuthResult.Failure(AuthFailureReason.PersistenceError, "Registration failed due to a server error.");
             }
 
             var token = _jwtService.GenerateToken(user);
 
-            return new AuthResponseDto
+            return AuthResult.SuccessResult(new AuthResponseDto
             {
                 Token = token,
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role
-            };
+            });
         }
 
-        public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
+        public async Task<AuthResult> LoginAsync(LoginDto dto)
         {
-            ArgumentNullException.ThrowIfNull(dto);
+            if (dto == null
+                || string.IsNullOrWhiteSpace(dto.Email)
+                || string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return AuthResult.Failure(AuthFailureReason.ValidationError, "Email and Password are required.");
+            }
 
             var user = await _userRepository.GetByEmailAsync(dto.Email);
 
-            if (user == null || string.IsNullOrWhiteSpace(user.PasswordHash))
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
-                return null;
-            }
-
-            if (user.PasswordHash.Length != 60 ||
-                !user.PasswordHash.StartsWith("$2", StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            try
-            {
-                if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                {
-                    return null;
-                }
-            }
-            catch (ArgumentException)
-            {
-                return null;
+                return AuthResult.Failure(AuthFailureReason.InvalidCredentials, "Invalid email or password.");
             }
 
             var token = _jwtService.GenerateToken(user);
 
-            return new AuthResponseDto
+            return AuthResult.SuccessResult(new AuthResponseDto
             {
                 Token = token,
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role
-            };
-        }
-
-        private static bool IsUniqueConstraintViolation(
-            DbUpdateException exception)
-        {
-            var message = exception.ToString();
-
-            return message.Contains(
-                       "2601",
-                       StringComparison.OrdinalIgnoreCase)
-                   || message.Contains(
-                       "2627",
-                       StringComparison.OrdinalIgnoreCase)
-                   || message.Contains(
-                       "unique",
-                       StringComparison.OrdinalIgnoreCase)
-                   || message.Contains(
-                       "duplicate",
-                       StringComparison.OrdinalIgnoreCase);
+            });
         }
     }
 }

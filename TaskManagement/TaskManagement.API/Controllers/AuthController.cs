@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TaskManagement.Application.DTOs;
-using TaskManagement.Application.Exceptions;
-using TaskManagement.Application.Interfaces;
 using Microsoft.AspNetCore.RateLimiting;
+using TaskManagement.Application.DTOs;
+using TaskManagement.Application.Interfaces;
 
 namespace TaskManagement.API.Controllers
 {
@@ -13,7 +12,9 @@ namespace TaskManagement.API.Controllers
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            ILogger<AuthController> logger)
         {
             ArgumentNullException.ThrowIfNull(authService);
             ArgumentNullException.ThrowIfNull(logger);
@@ -26,20 +27,47 @@ namespace TaskManagement.API.Controllers
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             if (dto == null)
-                return BadRequest(new { message = "Request body is required" });
-
-            try
             {
-                var result = await _authService.RegisterAsync(dto);
+                return BadRequest(new
+                {
+                    message = "Request body is required"
+                });
+            }
 
-                _logger.LogInformation("New user registered successfully");
-                return Ok(result);
-            }
-            catch (DuplicateEmailException)
+            var result = await _authService.RegisterAsync(dto);
+
+            if (!result.Success)
             {
-                _logger.LogWarning("Registration failed because the email is already registered");
-                return Conflict(new { message = "Email already registered" });
+                _logger.LogWarning(
+                    "Registration failed: {Reason}",
+                    result.FailureReason);
+
+                return result.FailureReason switch
+                {
+                    AuthFailureReason.ValidationError =>
+                        BadRequest(new
+                        {
+                            message = result.ErrorMessage
+                        }),
+
+                    AuthFailureReason.DuplicateEmail =>
+                        Conflict(new
+                        {
+                            message = result.ErrorMessage
+                        }),
+
+                    _ =>
+                        StatusCode(500, new
+                        {
+                            message = "An unexpected error occurred."
+                        })
+                };
             }
+
+            _logger.LogInformation(
+                "New user registered successfully");
+
+            return Ok(result.Data);
         }
 
         [HttpPost("login")]
@@ -47,18 +75,30 @@ namespace TaskManagement.API.Controllers
         public async Task<IActionResult> Login(LoginDto dto)
         {
             if (dto == null)
-                return BadRequest(new { message = "Request body is required" });
+            {
+                return BadRequest(new
+                {
+                    message = "Request body is required"
+                });
+            }
 
             var result = await _authService.LoginAsync(dto);
 
-            if (result == null)
+            if (!result.Success)
             {
-                _logger.LogWarning("Failed login attempt");
-                return Unauthorized(new { message = "Invalid email or password" });
+                _logger.LogWarning(
+                    "Failed login attempt");
+
+                return Unauthorized(new
+                {
+                    message = result.ErrorMessage
+                });
             }
 
-            _logger.LogInformation("User logged in successfully");
-            return Ok(result);
+            _logger.LogInformation(
+                "User logged in successfully");
+
+            return Ok(result.Data);
         }
     }
 }

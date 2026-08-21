@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 
@@ -41,8 +41,7 @@ namespace TaskManagement.API.Controllers
 
         private string GetCurrentUserRole()
         {
-            var role = User.FindFirstValue(ClaimTypes.Role);
-            return role ?? "User";
+            return User.FindFirstValue(ClaimTypes.Role) ?? "User";
         }
 
         [HttpGet]
