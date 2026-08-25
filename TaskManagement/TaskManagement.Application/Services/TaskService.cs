@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Domain.Entities;
@@ -18,12 +16,18 @@ namespace TaskManagement.Application.Services
         {
             ArgumentNullException.ThrowIfNull(taskRepository);
             ArgumentNullException.ThrowIfNull(userRepository);
+
             _taskRepository = taskRepository;
             _userRepository = userRepository;
         }
 
-        public async Task<List<TaskResponseDto>> GetTasksAsync(int currentUserId, string currentUserRole)
+        public async Task<List<TaskResponseDto>> GetTasksAsync(
+            int currentUserId,
+            string currentUserRole)
         {
+            if (string.IsNullOrWhiteSpace(currentUserRole))
+                throw new ArgumentException("User role is required", nameof(currentUserRole));
+
             List<TaskItem> tasks = currentUserRole == "Admin"
                 ? await _taskRepository.GetAllAsync()
                 : await _taskRepository.GetByUserIdAsync(currentUserId);
@@ -31,21 +35,34 @@ namespace TaskManagement.Application.Services
             return tasks.Select(MapToDto).ToList();
         }
 
-        public async Task<TaskResponseDto?> GetTaskByIdAsync(int id, int currentUserId, string currentUserRole)
+        public async Task<TaskResponseDto?> GetTaskByIdAsync(
+            int id,
+            int currentUserId,
+            string currentUserRole)
         {
+            if (string.IsNullOrWhiteSpace(currentUserRole))
+                throw new ArgumentException("User role is required", nameof(currentUserRole));
+
             var task = await _taskRepository.GetByIdAsync(id);
 
             if (task == null)
                 return null;
 
-            if (currentUserRole != "Admin" && task.AssignedToUserId != currentUserId)
+            if (currentUserRole != "Admin" &&
+                task.AssignedToUserId != currentUserId)
                 return null;
 
             return MapToDto(task);
         }
 
-        public async Task<TaskResponseDto> CreateTaskAsync(CreateTaskDto dto, int currentUserId, string currentUserRole)
+        public async Task<TaskResponseDto> CreateTaskAsync(
+            CreateTaskDto dto,
+            int currentUserId,
+            string currentUserRole)
         {
+            if (string.IsNullOrWhiteSpace(currentUserRole))
+                throw new ArgumentException("User role is required", nameof(currentUserRole));
+
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -55,9 +72,12 @@ namespace TaskManagement.Application.Services
             if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
                 throw new ArgumentException("Invalid priority value");
 
-            var assignedToId = currentUserRole == "Admin" ? dto.AssignedToUserId : currentUserId;
+            var assignedToId = currentUserRole == "Admin"
+                ? dto.AssignedToUserId
+                : currentUserId;
 
             var assignedUser = await _userRepository.GetByIdAsync(assignedToId);
+
             if (assignedUser == null)
                 throw new ArgumentException("Assigned user does not exist");
 
@@ -76,14 +96,23 @@ namespace TaskManagement.Application.Services
             await _taskRepository.SaveChangesAsync();
 
             var createdTask = await _taskRepository.GetByIdAsync(task.Id);
+
             if (createdTask == null)
-                throw new InvalidOperationException("Task was created but could not be retrieved");
+                throw new InvalidOperationException(
+                    "Task was created but could not be retrieved");
 
             return MapToDto(createdTask);
         }
 
-        public async Task<bool> UpdateTaskAsync(int id, UpdateTaskDto dto, int currentUserId, string currentUserRole)
+        public async Task<bool> UpdateTaskAsync(
+            int id,
+            UpdateTaskDto dto,
+            int currentUserId,
+            string currentUserRole)
         {
+            if (string.IsNullOrWhiteSpace(currentUserRole))
+                throw new ArgumentException("User role is required", nameof(currentUserRole));
+
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -92,7 +121,8 @@ namespace TaskManagement.Application.Services
             if (task == null)
                 return false;
 
-            if (currentUserRole != "Admin" && task.AssignedToUserId != currentUserId)
+            if (currentUserRole != "Admin" &&
+                task.AssignedToUserId != currentUserId)
                 return false;
 
             if (string.IsNullOrWhiteSpace(dto.Title))
@@ -113,7 +143,9 @@ namespace TaskManagement.Application.Services
 
             if (currentUserRole == "Admin")
             {
-                var assignedUser = await _userRepository.GetByIdAsync(dto.AssignedToUserId);
+                var assignedUser =
+                    await _userRepository.GetByIdAsync(dto.AssignedToUserId);
+
                 if (assignedUser == null)
                     throw new ArgumentException("Assigned user does not exist");
 
@@ -126,8 +158,13 @@ namespace TaskManagement.Application.Services
             return true;
         }
 
-        public async Task<bool> DeleteTaskAsync(int id, string currentUserRole)
+        public async Task<bool> DeleteTaskAsync(
+            int id,
+            string currentUserRole)
         {
+            if (string.IsNullOrWhiteSpace(currentUserRole))
+                throw new ArgumentException("User role is required", nameof(currentUserRole));
+
             if (currentUserRole != "Admin")
                 return false;
 
