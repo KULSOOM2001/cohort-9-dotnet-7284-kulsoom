@@ -20,6 +20,7 @@ export default function TaskForm() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -27,6 +28,8 @@ export default function TaskForm() {
     let isActive = true;
     const controller = new AbortController();
 
+    setError('');
+    setLoadFailed(false);
     setLoading(true);
 
     axiosInstance
@@ -67,12 +70,17 @@ export default function TaskForm() {
       .catch((err) => {
         if (!isActive) return;
 
-        if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+        if (
+          err?.name === 'CanceledError' ||
+          err?.code === 'ERR_CANCELED'
+        ) {
           return;
         }
 
+        setLoadFailed(true);
         setError(
           err?.response?.data?.message ||
+            err?.message ||
             'Failed to load task.'
         );
       })
@@ -147,6 +155,21 @@ export default function TaskForm() {
     return (
       <div className="page">
         <p>Loading task...</p>
+      </div>
+    );
+  }
+
+  if (isEditMode && loadFailed) {
+    return (
+      <div className="page">
+        <p className="auth-error">{error}</p>
+
+        <button
+          type="button"
+          onClick={() => navigate('/tasks')}
+        >
+          Back to Tasks
+        </button>
       </div>
     );
   }

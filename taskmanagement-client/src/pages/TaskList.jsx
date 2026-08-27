@@ -11,9 +11,13 @@ export default function TaskList() {
       .get('/Tasks')
       .then((res) => {
         if (Array.isArray(res.data)) {
-          setTasks(res.data);
+          const validTasks = res.data.filter(
+            (task) => task !== null && typeof task === 'object'
+          );
+
+          setTasks(validTasks);
         } else {
-           setError('Invalid task data received.');
+          setError('Invalid task data received.');
         }
       })
       .catch(() => setError('Failed to load tasks.'));
@@ -46,9 +50,7 @@ export default function TaskList() {
 
           <tbody>
             {tasks.map((task) => (
-              <tr
-                key={task.id}
-              >
+              <tr key={task.id}>
                 <td>
                   <Link to={`/tasks/${task.id}`}>
                     {task.title}
@@ -71,3 +73,4 @@ export default function TaskList() {
     </div>
   );
 }
+
