@@ -72,6 +72,9 @@ namespace TaskManagement.Application.Services
             if (!Enum.IsDefined(typeof(TaskPriority), dto.Priority))
                 throw new ArgumentException("Invalid priority value");
 
+            if (!Enum.IsDefined(typeof(TaskStatusEnum), dto.Status))
+                throw new ArgumentException("Invalid status value");
+
             var assignedToId = currentUserRole == "Admin"
                 ? dto.AssignedToUserId
                 : currentUserId;
@@ -89,7 +92,7 @@ namespace TaskManagement.Application.Services
                 Category = dto.Category,
                 DueDate = dto.DueDate,
                 AssignedToUserId = assignedToId,
-                Status = TaskStatusEnum.Pending
+                Status = dto.Status
             };
 
             await _taskRepository.AddAsync(task);

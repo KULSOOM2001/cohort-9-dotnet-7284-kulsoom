@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
 export default function TaskList() {
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
     axiosInstance
       .get('/Tasks')
-      .then((res) => setTasks(res.data))
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          const validTasks = res.data.filter(
+            (task) => task !== null && typeof task === 'object'
+          );
+
+          setTasks(validTasks);
+        } else {
+          setError('Invalid task data received.');
+        }
+      })
       .catch(() => setError('Failed to load tasks.'));
   }, []);
 
@@ -41,12 +50,12 @@ export default function TaskList() {
 
           <tbody>
             {tasks.map((task) => (
-              <tr
-                key={task.id}
-                onClick={() => navigate(`/tasks/${task.id}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <td>{task.title}</td>
+              <tr key={task.id}>
+                <td>
+                  <Link to={`/tasks/${task.id}`}>
+                    {task.title}
+                  </Link>
+                </td>
                 <td>{task.status}</td>
                 <td>{task.priority}</td>
                 <td>{task.category || '-'}</td>
@@ -64,3 +73,4 @@ export default function TaskList() {
     </div>
   );
 }
+
