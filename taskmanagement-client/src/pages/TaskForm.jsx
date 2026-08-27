@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
 export default function TaskForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -17,6 +20,49 @@ export default function TaskForm() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    setLoading(true);
+
+    axiosInstance
+      .get(`/Tasks/${id}`)
+      .then((res) => {
+        const task = res.data;
+
+        setFormData({
+          title: task.title || '',
+          description: task.description || '',
+          status:
+            task.status === 'InProgress'
+              ? 1
+              : task.status === 'Completed'
+                ? 2
+                : 0,
+          priority:
+            task.priority === 'Low'
+              ? 0
+              : task.priority === 'High'
+                ? 2
+                : 1,
+          category: task.category || '',
+          dueDate: task.dueDate
+            ? task.dueDate.split('T')[0]
+            : '',
+          assignedToUserId: task.assignedToUserId || '',
+        });
+      })
+      .catch((err) => {
+        setError(
+          err?.response?.data?.message ||
+            'Failed to load task.'
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [id, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,36 +89,52 @@ export default function TaskForm() {
 
     setLoading(true);
 
-    try {
-      await axiosInstance.post('/Tasks', {
-        title: formData.title,
-        description: formData.description || null,
-        status: Number(formData.status),
-        priority: Number(formData.priority),
-        category: formData.category || null,
-        dueDate: formData.dueDate || null,
-        assignedToUserId: Number(formData.assignedToUserId),
-      });
+    const payload = {
+      title: formData.title,
+      description: formData.description || null,
+      status: Number(formData.status),
+      priority: Number(formData.priority),
+      category: formData.category || null,
+      dueDate: formData.dueDate || null,
+      assignedToUserId: Number(formData.assignedToUserId),
+    };
 
-      navigate('/tasks');
+    try {
+      if (isEditMode) {
+        await axiosInstance.put(`/Tasks/${id}`, payload);
+      } else {
+        await axiosInstance.post('/Tasks', payload);
+      }
+
+      navigate(isEditMode ? `/tasks/${id}` : '/tasks');
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Failed to create task.'
+        err?.response?.data?.message ||
+          (isEditMode
+            ? 'Failed to update task.'
+            : 'Failed to create task.')
       );
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading && isEditMode && !formData.title) {
+    return (
+      <div className="page">
+        <p>Loading task...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <div className="task-form">
-        <h1>New Task</h1>
+        <h1>{isEditMode ? 'Edit Task' : 'New Task'}</h1>
 
         {error && <p className="auth-error">{error}</p>}
 
         <form onSubmit={handleSubmit}>
-
           <div className="form-group">
             <label htmlFor="title">Title</label>
             <input
@@ -82,6 +144,7 @@ export default function TaskForm() {
               value={formData.title}
               onChange={handleChange}
               placeholder="Enter task title"
+              disabled={loading}
             />
           </div>
 
@@ -93,6 +156,7 @@ export default function TaskForm() {
               value={formData.description}
               onChange={handleChange}
               placeholder="Enter task description"
+              disabled={loading}
             />
           </div>
 
@@ -103,6 +167,7 @@ export default function TaskForm() {
               name="status"
               value={formData.status}
               onChange={handleChange}
+              disabled={loading}
             >
               <option value="0">Pending</option>
               <option value="1">In Progress</option>
@@ -117,6 +182,7 @@ export default function TaskForm() {
               name="priority"
               value={formData.priority}
               onChange={handleChange}
+              disabled={loading}
             >
               <option value="0">Low</option>
               <option value="1">Medium</option>
@@ -133,6 +199,7 @@ export default function TaskForm() {
               value={formData.category}
               onChange={handleChange}
               placeholder="Enter category"
+              disabled={loading}
             />
           </div>
 
@@ -144,6 +211,7 @@ export default function TaskForm() {
               type="date"
               value={formData.dueDate}
               onChange={handleChange}
+              disabled={loading}
             />
           </div>
 
@@ -158,23 +226,31 @@ export default function TaskForm() {
               value={formData.assignedToUserId}
               onChange={handleChange}
               placeholder="Enter user ID"
+              disabled={loading}
             />
           </div>
 
           <div className="form-actions">
             <button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Task'}
+              {loading
+                ? isEditMode
+                  ? 'Updating...'
+                  : 'Creating...'
+                : isEditMode
+                  ? 'Update Task'
+                  : 'Create Task'}
             </button>
 
             <button
               type="button"
-              onClick={() => navigate('/tasks')}
+              onClick={() =>
+                navigate(isEditMode ? `/tasks/${id}` : '/tasks')
+              }
               disabled={loading}
             >
               Cancel
             </button>
           </div>
-
         </form>
       </div>
     </div>

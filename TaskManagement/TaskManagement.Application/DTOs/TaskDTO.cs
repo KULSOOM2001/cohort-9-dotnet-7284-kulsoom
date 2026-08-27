@@ -12,6 +12,8 @@ namespace TaskManagement.Application.DTOs
         [StringLength(2000)]
         public string? Description { get; set; }
 
+        public TaskStatusEnum Status { get; set; } = TaskStatusEnum.Pending;
+
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
         [StringLength(100)]
