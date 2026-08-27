@@ -1,3 +1,66 @@
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance';
+
 export default function TaskList() {
-  return <h1>Task List Page</h1>;
+  const [tasks, setTasks] = useState([]);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    axiosInstance
+      .get('/Tasks')
+      .then((res) => setTasks(res.data))
+      .catch(() => setError('Failed to load tasks.'));
+  }, []);
+
+  return (
+    <div className="page">
+      <h1>Tasks</h1>
+
+      <Link to="/tasks/new">
+        <button>New Task</button>
+      </Link>
+
+      {error && <p className="auth-error">{error}</p>}
+
+      {tasks.length === 0 && !error && <p>No tasks found.</p>}
+
+      {tasks.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Category</th>
+              <th>Due Date</th>
+              <th>Assigned To</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {tasks.map((task) => (
+              <tr
+                key={task.id}
+                onClick={() => navigate(`/tasks/${task.id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <td>{task.title}</td>
+                <td>{task.status}</td>
+                <td>{task.priority}</td>
+                <td>{task.category || '-'}</td>
+                <td>
+                  {task.dueDate
+                    ? new Date(task.dueDate).toLocaleDateString()
+                    : '-'}
+                </td>
+                <td>{task.assignedToUserName || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
 }
