@@ -24,12 +24,23 @@ export default function TaskForm() {
   useEffect(() => {
     if (!isEditMode) return;
 
+    let isActive = true;
+    const controller = new AbortController();
+
     setLoading(true);
 
     axiosInstance
-      .get(`/Tasks/${id}`)
+      .get(`/Tasks/${id}`, {
+        signal: controller.signal,
+      })
       .then((res) => {
+        if (!isActive) return;
+
         const task = res.data;
+
+        if (!task || typeof task !== 'object' || Array.isArray(task)) {
+          throw new Error('Invalid task response.');
+        }
 
         setFormData({
           title: task.title || '',
@@ -54,14 +65,27 @@ export default function TaskForm() {
         });
       })
       .catch((err) => {
+        if (!isActive) return;
+
+        if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+          return;
+        }
+
         setError(
           err?.response?.data?.message ||
             'Failed to load task.'
         );
       })
       .finally(() => {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
   }, [id, isEditMode]);
 
   const handleChange = (e) => {
@@ -256,3 +280,4 @@ export default function TaskForm() {
     </div>
   );
 }
+
