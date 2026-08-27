@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
-import { useAuth } from '../context/useAuth';
 import './auth.css';
 
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
+    fullName: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
 
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (event) => {
@@ -29,31 +30,42 @@ export default function Login() {
     event.preventDefault();
 
     setError('');
+    setSuccess('');
 
-    if (!formData.email || !formData.password) {
-      setError('Email and password are required.');
+    if (
+      !formData.fullName ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      setError('All fields are required.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await axiosInstance.post('/Auth/login', formData);
+      await axiosInstance.post('/Auth/register', {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
 
-      const { token, ...userData } = response.data;
+      setSuccess('Registration successful. Redirecting to login...');
 
-      if (!token) {
-        setError('Login failed. No authentication token was returned.');
-        return;
-      }
-
-      login(userData, token);
-      navigate('/dashboard');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1000);
     } catch (err) {
       const message =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Invalid email or password.';
+        'Registration failed. Please try again.';
 
       setError(message);
     } finally {
@@ -64,10 +76,24 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>Login</h1>
-        <p>Sign in to your account</p>
+        <h1>Register</h1>
+        <p>Create your account</p>
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="fullName">Full Name</label>
+            <input
+              id="fullName"
+              name="fullName"
+              type="text"
+              value={formData.fullName}
+              onChange={handleChange}
+              placeholder="Enter your full name"
+              autoComplete="name"
+              required
+            />
+          </div>
+
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -91,20 +117,35 @@ export default function Login() {
               value={formData.password}
               onChange={handleChange}
               placeholder="Enter your password"
-              autoComplete="current-password"
+              autoComplete="new-password"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              autoComplete="new-password"
               required
             />
           </div>
 
           {error && <p className="auth-error">{error}</p>}
+          {success && <p className="auth-success">{success}</p>}
 
           <button type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
 
         <p className="auth-link">
-          Don't have an account? <Link to="/register">Register</Link>
+          Already have an account? <Link to="/login">Login</Link>
         </p>
       </div>
     </div>
