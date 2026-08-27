@@ -8,11 +8,26 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const { user, logout } = useAuth();
 
-  useEffect(() => {
-    axiosInstance.get('/Dashboard')
-      .then((res) => setData(res.data))
-      .catch(() => setError('Failed to load dashboard.'));
-  }, []);
+useEffect(() => {
+  axiosInstance.get('/Dashboard')
+    .then((res) => {
+      const dashboard = res.data;
+
+      const isValid =
+        dashboard &&
+        typeof dashboard.pendingCount === 'number' &&
+        typeof dashboard.inProgressCount === 'number' &&
+        typeof dashboard.completedCount === 'number' &&
+        typeof dashboard.totalCount === 'number';
+
+      if (isValid) {
+        setData(dashboard);
+      } else {
+        setError('Invalid dashboard data received.');
+      }
+    })
+    .catch(() => setError('Failed to load dashboard.'));
+}, []);
 
   return (
     <div className="page">
