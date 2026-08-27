@@ -40,6 +40,11 @@ export default function Login() {
 
       const response = await axiosInstance.post('/Auth/login', formData);
 
+      if (!response.data) {
+        setError('Login failed. Invalid authentication response.');
+        return;
+      }
+
       const { token, ...userData } = response.data;
 
       if (!token) {

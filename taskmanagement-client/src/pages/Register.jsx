@@ -68,7 +68,6 @@ export default function Register() {
         'Registration failed. Please try again.';
 
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -139,7 +138,7 @@ export default function Register() {
           {error && <p className="auth-error">{error}</p>}
           {success && <p className="auth-success">{success}</p>}
 
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading || !!success}>
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
