@@ -22,10 +22,24 @@ export default function TaskForm() {
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
 
-  useEffect(() => {
-    if (!isEditMode) return;
+useEffect(() => {
+  if (!isEditMode) {
+    setLoading(false);
+    setError('');
+    setLoadFailed(false);
+    setFormData({
+      title: '',
+      description: '',
+      status: 0,
+      priority: 1,
+      category: '',
+      dueDate: '',
+      assignedToUserId: '',
+    });
+    return;
+  }
 
-    let isActive = true;
+  let isActive = true;
     const controller = new AbortController();
 
     setError('');
