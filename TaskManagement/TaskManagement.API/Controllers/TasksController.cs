@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TaskManagement.Application.DTOs;
 using TaskManagement.Application.Interfaces;
+using Microsoft.AspNetCore.SignalR;
+using TaskManagement.API.Hubs;
 
 namespace TaskManagement.API.Controllers
 {
@@ -13,13 +15,15 @@ namespace TaskManagement.API.Controllers
     {
         private readonly ITaskService _taskService;
         private readonly ILogger<TasksController> _logger;
+        private readonly IHubContext<TaskHub> _hubContext;
 
-        public TasksController(ITaskService taskService, ILogger<TasksController> logger)
+        public TasksController(ITaskService taskService, ILogger<TasksController> logger, IHubContext<TaskHub> hubContext)
         {
             ArgumentNullException.ThrowIfNull(taskService);
             ArgumentNullException.ThrowIfNull(logger);
             _taskService = taskService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         private int GetCurrentUserId()
@@ -62,6 +66,7 @@ namespace TaskManagement.API.Controllers
 
             var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
             _logger.LogInformation("Task created with id {TaskId}", task.Id);
+            await _hubContext.Clients.All.SendAsync("TaskCreated",task);
 
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
         }
@@ -78,6 +83,7 @@ namespace TaskManagement.API.Controllers
                 return NotFound(new { message = "Task not found or access denied" });
 
             _logger.LogInformation("Task updated with id {TaskId}", id);
+            await _hubContext.Clients.All.SendAsync("TaskUpdated",new { id });
             return Ok(new { message = "Task updated successfully" });
         }
 
@@ -90,6 +96,7 @@ namespace TaskManagement.API.Controllers
                 return NotFound(new { message = "Task not found or access denied" });
 
             _logger.LogWarning("Task deleted with id {TaskId}", id);
+            await _hubContext.Clients.All.SendAsync("TaskDeleted",new { id });
             return Ok(new { message = "Task deleted successfully" });
         }
     }
