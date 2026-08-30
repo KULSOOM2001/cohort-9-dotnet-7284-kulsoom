@@ -30,6 +30,8 @@ useEffect(() => {
 
   let isActive = true;
   const controller = new AbortController();
+  setLoading(true);
+  setLoadFailed(false);
 
   const loadTask = async () => {
     try {

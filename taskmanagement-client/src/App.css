@@ -482,11 +482,11 @@ button:disabled {
   grid-template-columns: 180px 1fr;
   gap: 1rem;
   padding: 1.1rem 1.4rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
 }
 
-.detail-row:last-of-type {
-  border-bottom: none;
+.detail-row + .detail-row {
+  border-top: 1px solid var(--border);
 }
 
 .detail-row strong {
