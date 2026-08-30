@@ -23,84 +23,90 @@ export default function TaskForm() {
   const [loading, setLoading] = useState(isEditMode);
   const [loadFailed, setLoadFailed] = useState(false);
 
-useEffect(() => {
-  if (!isEditMode) {
-    return;
-  }
-
-  let isActive = true;
-  const controller = new AbortController();
-  setLoading(true);
-  setLoadFailed(false);
-
-  const loadTask = async () => {
-    try {
-      const res = await axiosInstance.get(`/Tasks/${id}`, {
-        signal: controller.signal,
-      });
-
-      if (!isActive) return;
-
-      const task = res.data;
-
-      if (!task || typeof task !== 'object' || Array.isArray(task)) {
-        throw new Error('Invalid task response.');
-      }
-
-      setFormData({
-        title: task.title || '',
-        description: task.description || '',
-        status:
-          task.status === 'InProgress' || task.status === 1
-            ? 1
-            : task.status === 'Completed' || task.status === 2
-              ? 2
-              : 0,
-        priority:
-          task.priority === 'Low' || task.priority === 0
-            ? 0
-            : task.priority === 'High' || task.priority === 2
-              ? 2
-              : 1,
-        category: task.category || '',
-        dueDate: task.dueDate
-          ? task.dueDate.split('T')[0]
-          : '',
-        assignedToUserId: task.assignedToUserId || '',
-      });
-
+  useEffect(() => {
+    if (!isEditMode) {
+      setFormData(initialFormData);
       setError('');
       setLoadFailed(false);
-    } catch (err) {
-      if (!isActive) return;
-
-      if (
-        err?.name === 'CanceledError' ||
-        err?.code === 'ERR_CANCELED'
-      ) {
-        return;
-      }
-
-      setLoadFailed(true);
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          'Failed to load task.'
-      );
-    } finally {
-      if (isActive) {
-        setLoading(false);
-      }
+      setLoading(false);
+      return;
     }
-  };
 
-  loadTask();
+    let isActive = true;
+    const controller = new AbortController();
 
-  return () => {
-    isActive = false;
-    controller.abort();
-  };
-}, [id, isEditMode]);
+    setError('');
+    setLoadFailed(false);
+    setLoading(true);
+
+    const loadTask = async () => {
+      try {
+        const res = await axiosInstance.get(`/Tasks/${id}`, {
+          signal: controller.signal,
+        });
+
+        if (!isActive) return;
+
+        const task = res.data;
+
+        if (!task || typeof task !== 'object' || Array.isArray(task)) {
+          throw new Error('Invalid task response.');
+        }
+
+        setFormData({
+          title: task.title || '',
+          description: task.description || '',
+          status:
+            task.status === 'InProgress' || task.status === 1
+              ? 1
+              : task.status === 'Completed' || task.status === 2
+                ? 2
+                : 0,
+          priority:
+            task.priority === 'Low' || task.priority === 0
+              ? 0
+              : task.priority === 'High' || task.priority === 2
+                ? 2
+                : 1,
+          category: task.category || '',
+          dueDate: task.dueDate
+            ? task.dueDate.split('T')[0]
+            : '',
+          assignedToUserId: task.assignedToUserId || '',
+        });
+
+        setError('');
+        setLoadFailed(false);
+      } catch (err) {
+        if (!isActive) return;
+
+        if (
+          err?.name === 'CanceledError' ||
+          err?.code === 'ERR_CANCELED'
+        ) {
+          return;
+        }
+
+        setLoadFailed(true);
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            'Failed to load task.'
+        );
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadTask();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [id, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -309,3 +315,4 @@ useEffect(() => {
     </div>
   );
 }
+

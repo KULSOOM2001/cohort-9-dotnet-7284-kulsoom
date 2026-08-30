@@ -123,6 +123,7 @@ export default function TaskList() {
     connection.onreconnected(() => {
       if (!disposed) {
         setRealtimeStatus('Live');
+        loadTasks();
       }
     });
     connection.onclose(() => {
