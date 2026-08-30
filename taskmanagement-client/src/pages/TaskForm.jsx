@@ -2,113 +2,103 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
+const initialFormData = {
+  title: '',
+  description: '',
+  status: 0,
+  priority: 1,
+  category: '',
+  dueDate: '',
+  assignedToUserId: '',
+};
+
 export default function TaskForm() {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const isEditMode = Boolean(id);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 0,
-    priority: 1,
-    category: '',
-    dueDate: '',
-    assignedToUserId: '',
-  });
-
+  const [formData, setFormData] = useState(initialFormData);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
   const [loadFailed, setLoadFailed] = useState(false);
 
 useEffect(() => {
   if (!isEditMode) {
-    setLoading(false);
-    setError('');
-    setLoadFailed(false);
-    setFormData({
-      title: '',
-      description: '',
-      status: 0,
-      priority: 1,
-      category: '',
-      dueDate: '',
-      assignedToUserId: '',
-    });
     return;
   }
 
   let isActive = true;
-    const controller = new AbortController();
+  const controller = new AbortController();
 
-    setError('');
-    setLoadFailed(false);
-    setLoading(true);
-
-    axiosInstance
-      .get(`/Tasks/${id}`, {
+  const loadTask = async () => {
+    try {
+      const res = await axiosInstance.get(`/Tasks/${id}`, {
         signal: controller.signal,
-      })
-      .then((res) => {
-        if (!isActive) return;
-
-        const task = res.data;
-
-        if (!task || typeof task !== 'object' || Array.isArray(task)) {
-          throw new Error('Invalid task response.');
-        }
-
-        setFormData({
-          title: task.title || '',
-          description: task.description || '',
-          status:
-            task.status === 'InProgress'
-              ? 1
-              : task.status === 'Completed'
-                ? 2
-                : 0,
-          priority:
-            task.priority === 'Low'
-              ? 0
-              : task.priority === 'High'
-                ? 2
-                : 1,
-          category: task.category || '',
-          dueDate: task.dueDate
-            ? task.dueDate.split('T')[0]
-            : '',
-          assignedToUserId: task.assignedToUserId || '',
-        });
-      })
-      .catch((err) => {
-        if (!isActive) return;
-
-        if (
-          err?.name === 'CanceledError' ||
-          err?.code === 'ERR_CANCELED'
-        ) {
-          return;
-        }
-
-        setLoadFailed(true);
-        setError(
-          err?.response?.data?.message ||
-            err?.message ||
-            'Failed to load task.'
-        );
-      })
-      .finally(() => {
-        if (isActive) {
-          setLoading(false);
-        }
       });
 
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, [id, isEditMode]);
+      if (!isActive) return;
+
+      const task = res.data;
+
+      if (!task || typeof task !== 'object' || Array.isArray(task)) {
+        throw new Error('Invalid task response.');
+      }
+
+      setFormData({
+        title: task.title || '',
+        description: task.description || '',
+        status:
+          task.status === 'InProgress' || task.status === 1
+            ? 1
+            : task.status === 'Completed' || task.status === 2
+              ? 2
+              : 0,
+        priority:
+          task.priority === 'Low' || task.priority === 0
+            ? 0
+            : task.priority === 'High' || task.priority === 2
+              ? 2
+              : 1,
+        category: task.category || '',
+        dueDate: task.dueDate
+          ? task.dueDate.split('T')[0]
+          : '',
+        assignedToUserId: task.assignedToUserId || '',
+      });
+
+      setError('');
+      setLoadFailed(false);
+    } catch (err) {
+      if (!isActive) return;
+
+      if (
+        err?.name === 'CanceledError' ||
+        err?.code === 'ERR_CANCELED'
+      ) {
+        return;
+      }
+
+      setLoadFailed(true);
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to load task.'
+      );
+    } finally {
+      if (isActive) {
+        setLoading(false);
+      }
+    }
+  };
+
+  loadTask();
+
+  return () => {
+    isActive = false;
+    controller.abort();
+  };
+}, [id, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -317,4 +307,3 @@ useEffect(() => {
     </div>
   );
 }
-

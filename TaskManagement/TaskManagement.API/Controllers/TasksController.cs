@@ -21,6 +21,7 @@ namespace TaskManagement.API.Controllers
         {
             ArgumentNullException.ThrowIfNull(taskService);
             ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(hubContext);
             _taskService = taskService;
             _logger = logger;
             _hubContext = hubContext;

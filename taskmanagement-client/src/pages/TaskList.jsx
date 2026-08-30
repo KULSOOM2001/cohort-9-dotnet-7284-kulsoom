@@ -68,8 +68,19 @@ export default function TaskList() {
     }
   };
   useEffect(() => {
-    loadTasks();
-  }, []);
+  let isActive = true;
+
+  const fetchTasks = async () => {
+    if (!isActive) return;
+    await loadTasks();
+  };
+
+  fetchTasks();
+
+  return () => {
+    isActive = false;
+  };
+}, []);
   useEffect(() => {
     const hubBaseUrl =
       import.meta.env.VITE_API_BASE_URL ||
