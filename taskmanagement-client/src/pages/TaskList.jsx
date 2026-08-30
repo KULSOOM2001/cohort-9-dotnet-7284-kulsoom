@@ -85,14 +85,27 @@ export default function TaskList() {
     const hubBaseUrl =
       import.meta.env.VITE_API_BASE_URL ||
       'http://localhost:5025/api';
-    const apiRoot = hubBaseUrl.replace(/\/api\/?$/, '');
-    const connection = new HubConnectionBuilder()
-      .withUrl(`${apiRoot}/hubs/tasks`, {
-        accessTokenFactory: () => sessionStorage.getItem('token') || '',
-      })
-      .configureLogging(LogLevel.Warning)
-      .withAutomaticReconnect()
-      .build();
+       const apiRoot = hubBaseUrl.replace(/\/api\/?$/, '');
+       const hubUrl = `${apiRoot}/hubs/tasks`;
+
+       const parsedHubUrl = new URL(hubUrl);
+
+       const isLocalDevelopment =
+        parsedHubUrl.hostname === 'localhost' ||
+        parsedHubUrl.hostname === '127.0.0.1';
+
+       if (parsedHubUrl.protocol !== 'https:' && !isLocalDevelopment) {
+          return;
+       }
+
+       const connection = new HubConnectionBuilder()
+         .withUrl(hubUrl, {
+           accessTokenFactory: () => sessionStorage.getItem('token') || '',
+          })
+          .configureLogging(LogLevel.Warning)
+          .withAutomaticReconnect()
+          .build();
+
     let disposed = false;
     let retryTimeoutId = null;
     let connectionStarting = false;
