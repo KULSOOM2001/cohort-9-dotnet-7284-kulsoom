@@ -25,19 +25,11 @@ export default function TaskForm() {
 
   useEffect(() => {
     if (!isEditMode) {
-      setFormData(initialFormData);
-      setError('');
-      setLoadFailed(false);
-      setLoading(false);
       return;
     }
 
     let isActive = true;
     const controller = new AbortController();
-
-    setError('');
-    setLoadFailed(false);
-    setLoading(true);
 
     const loadTask = async () => {
       try {
@@ -315,4 +307,3 @@ export default function TaskForm() {
     </div>
   );
 }
-
