@@ -549,7 +549,7 @@ button:disabled {
   border: 1px solid #fecaca;
   border-radius: 8px;
   background: var(--danger-bg);
-  color: var(--danger) !important;
+  color: #b91c1c !important;
   font-weight: 600;
 }
 

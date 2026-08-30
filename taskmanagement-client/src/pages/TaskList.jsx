@@ -88,7 +88,7 @@ export default function TaskList() {
        const apiRoot = hubBaseUrl.replace(/\/api\/?$/, '');
        const hubUrl = `${apiRoot}/hubs/tasks`;
 
-       const parsedHubUrl = new URL(hubUrl);
+       const parsedHubUrl = new URL(hubUrl, window.location.origin);
 
        const isLocalDevelopment =
         parsedHubUrl.hostname === 'localhost' ||
