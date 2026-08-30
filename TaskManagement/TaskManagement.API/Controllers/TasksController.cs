@@ -67,7 +67,13 @@ namespace TaskManagement.API.Controllers
 
             var task = await _taskService.CreateTaskAsync(dto, GetCurrentUserId(), GetCurrentUserRole());
             _logger.LogInformation("Task created with id {TaskId}", task.Id);
-            await _hubContext.Clients.All.SendAsync("TaskCreated",task);
+            await _hubContext.Clients
+    .Group($"User:{task.AssignedToUserId}")
+    .SendAsync("TaskCreated", task);
+
+await _hubContext.Clients
+    .Group("Admins")
+    .SendAsync("TaskCreated", task);
 
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
         }
@@ -84,21 +90,52 @@ namespace TaskManagement.API.Controllers
                 return NotFound(new { message = "Task not found or access denied" });
 
             _logger.LogInformation("Task updated with id {TaskId}", id);
-            await _hubContext.Clients.All.SendAsync("TaskUpdated",new { id });
+            var updatedTask = await _taskService.GetTaskByIdAsync(
+    id,
+    GetCurrentUserId(),
+    GetCurrentUserRole());
+
+if (updatedTask != null)
+{
+    await _hubContext.Clients
+        .Group($"User:{updatedTask.AssignedToUserId}")
+        .SendAsync("TaskUpdated", new { id });
+
+    await _hubContext.Clients
+        .Group("Admins")
+        .SendAsync("TaskUpdated", new { id });
+}
             return Ok(new { message = "Task updated successfully" });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var success = await _taskService.DeleteTaskAsync(id, GetCurrentUserRole());
+var task = await _taskService.GetTaskByIdAsync(
+    id,
+    GetCurrentUserId(),
+    GetCurrentUserRole());
 
-            if (!success)
-                return NotFound(new { message = "Task not found or access denied" });
+if (task == null)
+    return NotFound(new { message = "Task not found or access denied" });
 
-            _logger.LogWarning("Task deleted with id {TaskId}", id);
-            await _hubContext.Clients.All.SendAsync("TaskDeleted",new { id });
-            return Ok(new { message = "Task deleted successfully" });
-        }
+var success = await _taskService.DeleteTaskAsync(
+    id,
+    GetCurrentUserRole());
+
+if (!success)
+    return NotFound(new { message = "Task not found or access denied" });
+
+_logger.LogWarning("Task deleted with id {TaskId}", id);
+
+await _hubContext.Clients
+    .Group($"User:{task.AssignedToUserId}")
+    .SendAsync("TaskDeleted", new { id });
+
+await _hubContext.Clients
+    .Group("Admins")
+    .SendAsync("TaskDeleted", new { id });
+
+return Ok(new { message = "Task deleted successfully" });        }
     }
 }
