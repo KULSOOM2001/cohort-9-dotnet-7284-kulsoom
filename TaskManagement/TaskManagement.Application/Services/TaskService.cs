@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaskManagement.Application.DTOs;
@@ -12,7 +12,17 @@ namespace TaskManagement.Application.Services
         private readonly ITaskRepository _taskRepository;
         private readonly IUserRepository _userRepository;
 
-        public TaskService(ITaskRepository taskRepository, IUserRepository userRepository)
+        private static bool IsAdmin(string role)
+        {
+            return string.Equals(
+                role,
+                "Admin",
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        public TaskService(
+            ITaskRepository taskRepository,
+            IUserRepository userRepository)
         {
             ArgumentNullException.ThrowIfNull(taskRepository);
             ArgumentNullException.ThrowIfNull(userRepository);
@@ -26,9 +36,11 @@ namespace TaskManagement.Application.Services
             string currentUserRole)
         {
             if (string.IsNullOrWhiteSpace(currentUserRole))
-                throw new ArgumentException("User role is required", nameof(currentUserRole));
+                throw new ArgumentException(
+                    "User role is required",
+                    nameof(currentUserRole));
 
-            List<TaskItem> tasks = currentUserRole == "Admin"
+            List<TaskItem> tasks = IsAdmin(currentUserRole)
                 ? await _taskRepository.GetAllAsync()
                 : await _taskRepository.GetByUserIdAsync(currentUserId);
 
@@ -41,14 +53,16 @@ namespace TaskManagement.Application.Services
             string currentUserRole)
         {
             if (string.IsNullOrWhiteSpace(currentUserRole))
-                throw new ArgumentException("User role is required", nameof(currentUserRole));
+                throw new ArgumentException(
+                    "User role is required",
+                    nameof(currentUserRole));
 
             var task = await _taskRepository.GetByIdAsync(id);
 
             if (task == null)
                 return null;
 
-            if (currentUserRole != "Admin" &&
+            if (!IsAdmin(currentUserRole) &&
                 task.AssignedToUserId != currentUserId)
                 return null;
 
@@ -61,7 +75,9 @@ namespace TaskManagement.Application.Services
             string currentUserRole)
         {
             if (string.IsNullOrWhiteSpace(currentUserRole))
-                throw new ArgumentException("User role is required", nameof(currentUserRole));
+                throw new ArgumentException(
+                    "User role is required",
+                    nameof(currentUserRole));
 
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -75,7 +91,7 @@ namespace TaskManagement.Application.Services
             if (!Enum.IsDefined(typeof(TaskStatusEnum), dto.Status))
                 throw new ArgumentException("Invalid status value");
 
-            var assignedToId = currentUserRole == "Admin"
+            var assignedToId = IsAdmin(currentUserRole)
                 ? dto.AssignedToUserId
                 : currentUserId;
 
@@ -114,7 +130,9 @@ namespace TaskManagement.Application.Services
             string currentUserRole)
         {
             if (string.IsNullOrWhiteSpace(currentUserRole))
-                throw new ArgumentException("User role is required", nameof(currentUserRole));
+                throw new ArgumentException(
+                    "User role is required",
+                    nameof(currentUserRole));
 
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -124,7 +142,7 @@ namespace TaskManagement.Application.Services
             if (task == null)
                 return false;
 
-            if (currentUserRole != "Admin" &&
+            if (!IsAdmin(currentUserRole) &&
                 task.AssignedToUserId != currentUserId)
                 return false;
 
@@ -144,7 +162,7 @@ namespace TaskManagement.Application.Services
             task.Category = dto.Category;
             task.DueDate = dto.DueDate;
 
-            if (currentUserRole == "Admin")
+            if (IsAdmin(currentUserRole))
             {
                 var assignedUser =
                     await _userRepository.GetByIdAsync(dto.AssignedToUserId);
@@ -166,9 +184,11 @@ namespace TaskManagement.Application.Services
             string currentUserRole)
         {
             if (string.IsNullOrWhiteSpace(currentUserRole))
-                throw new ArgumentException("User role is required", nameof(currentUserRole));
+                throw new ArgumentException(
+                    "User role is required",
+                    nameof(currentUserRole));
 
-            if (currentUserRole != "Admin")
+            if (!IsAdmin(currentUserRole))
                 return false;
 
             var task = await _taskRepository.GetByIdAsync(id);

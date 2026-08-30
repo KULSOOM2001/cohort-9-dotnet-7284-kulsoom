@@ -2,55 +2,49 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 
+const initialFormData = {
+  title: '',
+  description: '',
+  status: 0,
+  priority: 1,
+  category: '',
+  dueDate: '',
+  assignedToUserId: '',
+};
+
 export default function TaskForm() {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const isEditMode = Boolean(id);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 0,
-    priority: 1,
-    category: '',
-    dueDate: '',
-    assignedToUserId: '',
-  });
-
+  const [formData, setFormData] = useState(initialFormData);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
   const [loadFailed, setLoadFailed] = useState(false);
 
-useEffect(() => {
-  if (!isEditMode) {
-    setLoading(false);
-    setError('');
-    setLoadFailed(false);
-    setFormData({
-      title: '',
-      description: '',
-      status: 0,
-      priority: 1,
-      category: '',
-      dueDate: '',
-      assignedToUserId: '',
-    });
-    return;
-  }
+  useEffect(() => {
+    if (!isEditMode) {
+      setFormData(initialFormData);
+      setError('');
+      setLoadFailed(false);
+      setLoading(false);
+      return;
+    }
 
-  let isActive = true;
+    let isActive = true;
     const controller = new AbortController();
 
     setError('');
     setLoadFailed(false);
     setLoading(true);
 
-    axiosInstance
-      .get(`/Tasks/${id}`, {
-        signal: controller.signal,
-      })
-      .then((res) => {
+    const loadTask = async () => {
+      try {
+        const res = await axiosInstance.get(`/Tasks/${id}`, {
+          signal: controller.signal,
+        });
+
         if (!isActive) return;
 
         const task = res.data;
@@ -63,15 +57,15 @@ useEffect(() => {
           title: task.title || '',
           description: task.description || '',
           status:
-            task.status === 'InProgress'
+            task.status === 'InProgress' || task.status === 1
               ? 1
-              : task.status === 'Completed'
+              : task.status === 'Completed' || task.status === 2
                 ? 2
                 : 0,
           priority:
-            task.priority === 'Low'
+            task.priority === 'Low' || task.priority === 0
               ? 0
-              : task.priority === 'High'
+              : task.priority === 'High' || task.priority === 2
                 ? 2
                 : 1,
           category: task.category || '',
@@ -80,8 +74,10 @@ useEffect(() => {
             : '',
           assignedToUserId: task.assignedToUserId || '',
         });
-      })
-      .catch((err) => {
+
+        setError('');
+        setLoadFailed(false);
+      } catch (err) {
         if (!isActive) return;
 
         if (
@@ -97,12 +93,14 @@ useEffect(() => {
             err?.message ||
             'Failed to load task.'
         );
-      })
-      .finally(() => {
+      } finally {
         if (isActive) {
           setLoading(false);
         }
-      });
+      }
+    };
+
+    loadTask();
 
     return () => {
       isActive = false;
