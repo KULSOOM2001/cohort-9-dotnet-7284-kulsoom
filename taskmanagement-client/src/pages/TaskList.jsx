@@ -94,6 +94,56 @@ const escapeCsvValue = (value) => {
   return text;
 };
 
+const parseCsvRecords = (text) => {
+  const records = [];
+  let current = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const character = text[i];
+
+    if (character === '"') {
+      if (insideQuotes && text[i + 1] === '"') {
+        current += '""';
+        i += 1;
+      } else {
+        insideQuotes = !insideQuotes;
+        current += character;
+      }
+      continue;
+    }
+
+    if (
+      (character === '\n' || character === '\r') &&
+      !insideQuotes
+    ) {
+      if (current.trim() !== '') {
+        records.push(current);
+      }
+
+      current = '';
+
+      if (character === '\r' && text[i + 1] === '\n') {
+        i += 1;
+      }
+
+      continue;
+    }
+
+    current += character;
+  }
+
+  if (insideQuotes) {
+    throw new Error('Invalid CSV: an opening quote was not closed.');
+  }
+
+  if (current.trim() !== '') {
+    records.push(current);
+  }
+
+  return records;
+};
+
 const parseCsvLine = (line) => {
   const values = [];
   let current = '';
@@ -117,6 +167,10 @@ const parseCsvLine = (line) => {
     }
   }
 
+  if (insideQuotes) {
+    throw new Error('Invalid CSV: an opening quote was not closed.');
+  }
+
   values.push(current);
 
   return values;
@@ -124,18 +178,15 @@ const parseCsvLine = (line) => {
 
 const parseCsv = (text) => {
   const normalizedText = text.replace(/^\uFEFF/, '');
+  const records = parseCsvRecords(normalizedText);
 
-  const lines = normalizedText
-    .split(/\r?\n/)
-    .filter((line) => line.trim() !== '');
-
-  if (lines.length < 2) {
+  if (records.length < 2) {
     throw new Error(
       'CSV file must contain a header row and at least one task.'
     );
   }
 
-  const headers = parseCsvLine(lines[0]).map((header) =>
+  const headers = parseCsvLine(records[0]).map((header) =>
     header.trim().toLowerCase()
   );
 
@@ -159,8 +210,8 @@ const parseCsv = (text) => {
     );
   }
 
-  return lines.slice(1).map((line) => {
-    const values = parseCsvLine(line);
+  return records.slice(1).map((record) => {
+    const values = parseCsvLine(record);
     const row = {};
 
     headers.forEach((header, index) => {
@@ -610,19 +661,50 @@ export default function TaskList() {
       });
 
       let importedCount = 0;
+      const failedRows = [];
 
-      for (const task of tasksToImport) {
-        await axiosInstance.post('/Tasks', task);
-        importedCount += 1;
+      for (let index = 0; index < tasksToImport.length; index += 1) {
+        const task = tasksToImport[index];
+        const rowNumber = index + 2;
+
+        try {
+          await axiosInstance.post('/Tasks', task);
+          importedCount += 1;
+        } catch (err) {
+          failedRows.push({
+            rowNumber,
+            message:
+              err?.response?.data?.message ||
+              err?.message ||
+              'Failed to create task.',
+          });
+        }
       }
 
       await loadTasks();
 
-      setError(
-        `Successfully imported ${importedCount} task${
-          importedCount === 1 ? '' : 's'
-        }.`
-      );
+      if (failedRows.length === 0) {
+        setError(
+          `Successfully imported ${importedCount} task${
+            importedCount === 1 ? '' : 's'
+          }.`
+        );
+      } else {
+        const failedDetails = failedRows
+          .map(
+            (failure) =>
+              `Row ${failure.rowNumber}: ${failure.message}`
+          )
+          .join(' | ');
+
+        setError(
+          `Import partially completed: ${importedCount} task${
+            importedCount === 1 ? '' : 's'
+          } imported successfully, ${
+            failedRows.length
+          } failed. ${failedDetails}`
+        );
+      }
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -740,12 +822,26 @@ export default function TaskList() {
         </div>
       </div>
 
-      {error && <p className="auth-error">{error}</p>}
-
       {loading && <p>Loading tasks...</p>}
 
-      {!loading && (
+      {!loading && error && tasks.length === 0 && (
+        <div className="empty-state">
+          <h2>Unable to load tasks</h2>
+          <p className="auth-error">{error}</p>
+
+          <button
+            type="button"
+            onClick={loadTasks}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!loading && !(error && tasks.length === 0) && (
         <>
+          {error && <p className="auth-error">{error}</p>}
+
           <div className="task-filters">
             <div className="form-group">
               <label htmlFor="task-search">Search</label>
