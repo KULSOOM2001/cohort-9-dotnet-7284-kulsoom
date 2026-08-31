@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import Navbar from '../components/Navbar';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -13,10 +14,18 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="page">
-        <h1>Profile</h1>
-        <p className="auth-error">User information is not available.</p>
+        <Navbar />
 
-        <button type="button" onClick={() => navigate('/login')}>
+        <h1>Profile</h1>
+
+        <p className="auth-error">
+          User information is not available.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+        >
           Go to Login
         </button>
       </div>
@@ -25,13 +34,17 @@ export default function Profile() {
 
   return (
     <div className="page">
+      <Navbar />
+
       <div className="profile-card">
         <h1>My Profile</h1>
 
         <div className="profile-details">
           <div className="detail-row">
             <span className="detail-label">Full Name</span>
-            <span>{user.fullName || user.name || 'N/A'}</span>
+            <span>
+              {user.fullName || user.name || 'N/A'}
+            </span>
           </div>
 
           <div className="detail-row">
@@ -46,7 +59,10 @@ export default function Profile() {
         </div>
 
         <div className="profile-actions">
-          <button type="button" onClick={handleLogout}>
+          <button
+            type="button"
+            onClick={handleLogout}
+          >
             Logout
           </button>
         </div>
