@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import axiosInstance from '../api/axiosInstance';
+import Navbar from '../components/Navbar';
 
 const normalizeStatus = (status) => {
   if (typeof status === 'number') {
@@ -110,6 +111,7 @@ const parseCsvRecords = (text) => {
         insideQuotes = !insideQuotes;
         current += character;
       }
+
       continue;
     }
 
@@ -278,6 +280,7 @@ export default function TaskList() {
 
     const fetchTasks = async () => {
       if (!isActive) return;
+
       await loadTasks();
     };
 
@@ -654,8 +657,31 @@ export default function TaskList() {
           priority,
           category:
             String(row.category || '').trim() || null,
-          dueDate:
-            String(row.duedate || '').trim() || null,
+          dueDate: (() => {
+            const value = String(row.duedate || '').trim();
+
+            if (!value) {
+              return null;
+            }
+
+            const [month, day, year] = value.split('/');
+
+            if (
+              month &&
+              day &&
+              year &&
+              month.length <= 2 &&
+              day.length <= 2 &&
+              year.length === 4
+            ) {
+              return `${year}-${month.padStart(
+                2,
+                '0'
+              )}-${day.padStart(2, '0')}`;
+            }
+
+            return value;
+          })(),
           assignedToUserId,
         };
       });
@@ -663,7 +689,11 @@ export default function TaskList() {
       let importedCount = 0;
       const failedRows = [];
 
-      for (let index = 0; index < tasksToImport.length; index += 1) {
+      for (
+        let index = 0;
+        index < tasksToImport.length;
+        index += 1
+      ) {
         const task = tasksToImport[index];
         const rowNumber = index + 2;
 
@@ -765,6 +795,8 @@ export default function TaskList() {
 
   return (
     <div className="page">
+      <Navbar />
+
       <div className="task-list-header">
         <div>
           <h1>Tasks</h1>
