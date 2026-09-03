@@ -1,5 +1,8 @@
-bin/ 
-obj/ 
-.vs/ 
-*.user 
-Logs/ 
+bin/
+obj/
+.vs/
+*.user
+Logs/
+.sonarqube/
+**/TestResults/
+coverage.xml

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { CalendarDays, Radio, Search, Upload, Download, FileDown, Plus } from 'lucide-react';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import axiosInstance from '../api/axiosInstance';
 import Navbar from '../components/Navbar';
@@ -806,8 +808,8 @@ export default function TaskList() {
             tasks
           </p>
 
-          <small>
-            Real-time updates:{' '}
+          <small className="live-indicator">
+            <Radio size={13} /> Real-time updates:{' '}
             <strong>{realtimeStatus}</strong>
           </small>
         </div>
@@ -818,7 +820,7 @@ export default function TaskList() {
             onClick={handleExport}
             disabled={loading || filteredTasks.length === 0}
           >
-            Export CSV
+            <Download size={15} /> Export CSV
           </button>
 
           <button
@@ -826,7 +828,7 @@ export default function TaskList() {
             onClick={handleImportClick}
             disabled={loading || importing}
           >
-            {importing ? 'Importing...' : 'Import CSV'}
+            <Upload size={15} /> {importing ? 'Importing...' : 'Import CSV'}
           </button>
 
           <button
@@ -834,7 +836,7 @@ export default function TaskList() {
             onClick={downloadImportTemplate}
             disabled={loading || importing}
           >
-            CSV Template
+            <FileDown size={15} /> CSV Template
           </button>
 
           <input
@@ -849,7 +851,7 @@ export default function TaskList() {
             className="new-task-button"
             to="/tasks/new"
           >
-            New Task
+            <Plus size={16} /> New Task
           </Link>
         </div>
       </div>
@@ -878,13 +880,16 @@ export default function TaskList() {
             <div className="form-group">
               <label htmlFor="task-search">Search</label>
 
-              <input
-                id="task-search"
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search title or category..."
-              />
+              <div className="search-input-wrap">
+                <Search size={16} />
+                <input
+                  id="task-search"
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search title or category..."
+                />
+              </div>
             </div>
 
             <div className="form-group">
@@ -926,9 +931,7 @@ export default function TaskList() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="due-date-filter">
-                Due Date
-              </label>
+              <label htmlFor="due-date-filter"><CalendarDays size={13} /> Due Date</label>
 
               <input
                 id="due-date-filter"
@@ -1015,21 +1018,17 @@ export default function TaskList() {
                 </thead>
 
                 <tbody>
-                  {filteredTasks.map((task) => (
-                    <tr key={task.id}>
+                  {filteredTasks.map((task, index) => (
+                    <motion.tr key={task.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.025 }}>
                       <td>
                         <Link to={`/tasks/${task.id}`}>
                           {task.title || 'Untitled Task'}
                         </Link>
                       </td>
 
-                      <td>
-                        {normalizeStatus(task.status)}
-                      </td>
+                      <td><span className={`status-badge ${normalizeStatus(task.status).toLowerCase().replace(/\s+/g, '-')}`}>{normalizeStatus(task.status)}</span></td>
 
-                      <td>
-                        {normalizePriority(task.priority)}
-                      </td>
+                      <td><span className={`priority-badge ${normalizePriority(task.priority).toLowerCase()}`}>{normalizePriority(task.priority)}</span></td>
 
                       <td>{task.category || '-'}</td>
 
@@ -1044,7 +1043,7 @@ export default function TaskList() {
                       <td>
                         {task.assignedToUserName || '-'}
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))}
                 </tbody>
               </table>
