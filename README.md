@@ -496,37 +496,6 @@ The application includes:
 
 Sensitive configuration should always remain outside source control.
 
----
-
-# 🧪 Test Accounts
-
-The project can be tested using the following existing application accounts:
-
-| Name                 | Email                                                       | Role  | Password            |
-| -------------------- | ----------------------------------------------------------- | ----- | ------------------- |
-| Kulsoom Jawed Sheikh | [kulsoomjawed38@gmail.com](mailto:kulsoomjawed38@gmail.com) | Admin | Provided separately |
-| Mariyah              | [mariyahtest@gmail.com](mailto:mariyahtest@gmail.com)       | User  | Provided separately |
-
-> Test account passwords are provided separately to the project evaluator for security purposes.
-
-### Admin Account
-
-The Admin account can be used to verify:
-
-* Admin authentication
-* Role-based authorization
-* Task management functionality
-* Protected functionality
-
-### User Account
-
-The User account can be used to verify:
-
-* User authentication
-* Standard task management functionality
-* Protected routes
-* Task CRUD operations
-
 # 🧪 Testing
 
 The backend includes an xUnit test project:
