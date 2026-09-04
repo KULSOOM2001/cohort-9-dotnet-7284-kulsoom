@@ -1,0 +1,15 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, LockKeyhole, Mail, CheckSquare, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import axiosInstance from '../api/axiosInstance';
+import { useAuth } from '../context/useAuth';
+import './auth.css';
+
+export default function Login() {
+  const navigate = useNavigate(); const { login } = useAuth();
+  const [formData, setFormData] = useState({ email: '', password: '' }); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [showPassword, setShowPassword] = useState(false);
+  const handleChange = (e) => setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleSubmit = async (e) => { e.preventDefault(); setError(''); if (!formData.email || !formData.password) return setError('Email and password are required.'); try { setLoading(true); const response = await axiosInstance.post('/Auth/login', formData); if (!response.data?.token) return setError('Login failed. No authentication token was returned.'); const { token, ...userData } = response.data; login(userData, token); navigate('/dashboard'); } catch (err) { setError(err.response?.data?.message || err.response?.data?.error || 'Invalid email or password.'); } finally { setLoading(false); } };
+  return <div className="auth-page"><motion.div className="auth-shell" initial={{ opacity: 0, scale: .98, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: .35 }}><div className="auth-brand"><span className="brand-mark large"><CheckSquare size={24} /></span><div><strong>TaskFlow</strong><span>Organize. Prioritize. Deliver.</span></div></div><div className="auth-card"><div className="auth-heading"><span className="eyebrow">WELCOME BACK</span><h1>Sign in to your workspace</h1><p>Manage your tasks and stay on top of your work.</p></div><form onSubmit={handleSubmit}><div className="form-group"><label htmlFor="email">Email address</label><div className="input-wrap"><Mail size={18} /><input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" autoComplete="email" required /></div></div><div className="form-group"><label htmlFor="password">Password</label><div className="input-wrap"><LockKeyhole size={18} /><input id="password" name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleChange} placeholder="Enter your password" autoComplete="current-password" required /><button className="input-action" type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>{error && <div className="alert error">{error}</div>}<button className="auth-submit" type="submit" disabled={loading}>{loading ? 'Signing in…' : <>Sign in <ArrowRight size={18} /></>}</button></form><p className="auth-link">Don't have an account? <Link to="/register">Create one</Link></p></div></motion.div></div>;
+}
